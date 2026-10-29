@@ -139,7 +139,7 @@ export function Workspace({ user }: Props) {
 
   return <div className="app-shell">
     <aside className="sidebar">
-      <a href="/" className="brand" aria-label="简历随身首页"><span className="brand-mark"><FileCheck2 size={22} strokeWidth={1.7} /></span><span><b>简历随身</b><small>RESUME POCKET</small></span></a>
+      <a href="/" className="brand" aria-label="简历口袋首页"><span className="brand-mark"><FileCheck2 size={22} strokeWidth={1.7} /></span><span><b>简历口袋</b><small>RESUME POCKET</small></span></a>
       <div className="side-heading">YOUR SPACE <span>／ 你的空间</span></div>
       <nav aria-label="主导航"><a className="side-link active" href="#library" aria-label="我的简历"><FolderOpen size={18} /><span>我的简历</span><ChevronRight size={15} /></a><div className="side-link disabled"><Sparkles size={18} /><span>在线制作</span><small>即将到来</small></div></nav>
       <div className="side-note"><div className="side-note-icon"><LockKeyhole size={17} /></div><strong>安心收好你的故事</strong><p>简历属于你。登录后，只有你能查看和管理自己的文件。</p><span>PRIVATE BY DEFAULT <ArrowRight size={13} /></span></div>
@@ -168,7 +168,7 @@ export function Workspace({ user }: Props) {
 
           <section className="preview-card" aria-label="简历预览"><div className="preview-header"><div><span className="section-number">YOUR PREVIEW / 预览</span><h2>{selected ? "准备就绪" : "你的故事，值得被看见"}<span>✳</span></h2></div>{selected ? <a className="preview-badge" href={`/api/resumes/${selected.id}`} target="_blank" rel="noopener noreferrer">放大查看 ↗</a> : <span className="preview-badge">示意</span>}</div><div className={`preview-stage ${selected ? "has-resume" : ""}`}>{selected ? <PdfPreview key={selected.id} url={`/api/resumes/${selected.id}`} onReady={setPrintReady} /> : <SampleResume />}</div><div className="preview-bottom"><div className="preview-filename"><span className="mini-file"><FileText size={17} /></span><div><strong>{selected?.name ?? "你的简历预览"}</strong><small>{selected ? `${formatSize(selected.size)} · 仅自己可见` : "上传文件后即可查看"}</small></div></div><div className="preview-actions"><button className="icon-action" disabled={!selected || !printReady} onClick={() => window.print()} title={selected && !printReady ? "正在准备预览" : "打印简历"}><Printer size={16} /><span>打印</span></button>{selected ? <a className="icon-action dark" href={`/api/resumes/${selected.id}?download=1`} download><ArrowDownToLine size={16} /><span>下载</span></a> : <button className="icon-action dark" disabled><ArrowDownToLine size={16} /><span>下载</span></button>}</div></div></section>
         </div>
-        <div className="bottom-note"><span>KEEP YOUR STORY CLOSE.</span><p>为每一次新的开始，做好准备。 <span>✳</span></p><span>© RESUME POCKET</span></div>
+        <div className="bottom-note"><span>KEEP YOUR STORY CLOSE.</span><p>为每一次新的开始，做好准备。 <span>✳</span></p><span>© 简历口袋</span></div>
       </div>
     </main>
 
