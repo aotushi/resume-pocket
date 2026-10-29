@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 type Props = { url: string; onReady: (ready: boolean) => void };
 
@@ -60,8 +61,8 @@ export function PdfPreview({ url, onReady }: Props) {
   }, [url, onReady]);
 
   return <>
-    {loading && <div className="preview-message" role="status">正在打开简历，请稍等…</div>}
-    {error && <div className="preview-message preview-error" role="alert">暂时无法预览这份文件，可能是文件损坏或受密码保护。你仍可下载原文件查看。</div>}
-    <div id="resume-print-area" className="pdf-pages" ref={containerRef} aria-busy={loading} />
+    {loading && <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground print:hidden" role="status"><Spinner />正在打开简历，请稍等…</div>}
+    {error && <div className="mx-auto max-w-sm py-16 text-center text-sm leading-relaxed text-destructive print:hidden" role="alert">暂时无法预览这份文件，可能是文件损坏或受密码保护。你仍可下载原文件查看。</div>}
+    <div id="resume-print-area" className="flex w-full flex-col items-center gap-4 print:block" ref={containerRef} aria-busy={loading} />
   </>;
 }

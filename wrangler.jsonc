@@ -5,7 +5,7 @@
   "compatibility_date": "2026-10-29",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
-  "secrets": { "required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL"] },
+  "secrets": { "required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "ADMIN_EMAILS"] },
   "d1_databases": [
     {
       "binding": "DB",
@@ -15,7 +15,17 @@
     }
   ],
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "resume-pocket-files" }],
+  // Word 转 PDF：LibreOffice 容器，需 Workers Paid
+  // 本地 dev 不启动容器（Windows 不支持）：手动 docker run 转换镜像，并在 .dev.vars 设置 WORD_CONVERTER_URL
+  "dev": { "enable_containers": false },
+  "vars": { "WORD_CONVERTER_URL": "" },
+  // image_vars.APT_MIRROR：本机网络访问 deb.debian.org 不稳定，构建镜像时改用清华源；不需要可删
+  "containers": [{ "class_name": "WordConverter", "image": "./converter/Dockerfile", "instance_type": "basic", "max_instances": 3, "image_vars": { "APT_MIRROR": "mirrors.tuna.tsinghua.edu.cn" } }],
+  "durable_objects": { "bindings": [{ "name": "WORD_CONVERTER", "class_name": "WordConverter" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WordConverter"] }],
   "ratelimits": [
-    { "name": "AUTH_LIMITER", "namespace_id": "2800127", "simple": { "limit": 15, "period": 60 } }
+    { "name": "AUTH_LIMITER", "namespace_id": "2800127", "simple": { "limit": 15, "period": 60 } },
+    // 游客上传与管理链接恢复：每个 IP 每分钟 5 次
+    { "name": "GUEST_LIMITER", "namespace_id": "2800128", "simple": { "limit": 5, "period": 60 } }
   ]
 }

@@ -23,3 +23,10 @@ export async function getCurrentUser() {
   const session = await getAuth().api.getSession({ headers: await headers() });
   return session?.user ?? null;
 }
+
+// 管理员由环境变量 ADMIN_EMAILS（逗号分隔）指定，只在服务端判断，用户无法自行取得
+export function isAdmin(user: { email: string } | null) {
+  if (!user) return false;
+  const admins = (env.ADMIN_EMAILS ?? "").split(",").map((item) => item.trim().toLowerCase()).filter(Boolean);
+  return admins.includes(user.email.toLowerCase());
+}

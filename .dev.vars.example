@@ -1,2 +1,4 @@
 BETTER_AUTH_SECRET=replace-with-a-random-secret-of-at-least-32-characters
 BETTER_AUTH_URL=http://127.0.0.1:5173
+# 管理员邮箱，逗号分隔；未设置则没有管理员
+ADMIN_EMAILS=
