@@ -63,7 +63,7 @@ const plans = [
     rows: ["PDF、Word", "多份，长期保存", "另可自定义日期或永久", "更多", "支持", "完整的数据统计", "登录即可"],
   },
 ] as const;
-const planLabels = ["文件格式", "保存简历", "链接有效期", "同时有效的链接", "投递留言与随时失活", "访问统计", "换设备管理"];
+const planLabels = ["文件格式", "保存简历", "链接有效期", "同时有效的链接", "投递留言与随时停用", "访问统计", "换设备管理"];
 
 const roadmap = [
   { icon: Images, title: "更多文档与图片格式", text: "在 PDF 和 Word 之外，陆续支持更多文档格式及 JPG、PNG 等图片简历，同样可以在线预览、打印和下载。" },
@@ -73,8 +73,8 @@ const roadmap = [
 const faqs = [
   { q: "支持什么文件？", a: "支持 PDF 和 Word（DOCX、DOC），单个文件不超过 10 MB。PDF 按原排版呈现；Word 会转换后在线预览，字体或分页可能与原文件略有差异，分享前请先检查预览，下载时提供原文件。后续还会支持更多文档与图片格式。" },
   { q: "对方需要注册账号吗？", a: "不需要。持有有效链接的人可以直接在浏览器中查看简历，默认可以打印和下载。" },
-  { q: "链接会失效吗？", a: "创建时可选择 1 天（默认）、2 天、7 天、自定义日期或永久有效。到期后链接无法再打开；你也可以随时手动失活，之后可以重新启用。" },
-  { q: "链接被转发了怎么办？", a: "链接在有效期内，任何拿到它的人都可能打开。如果不希望继续被查看，可以立即失活这条链接。" },
+  { q: "链接会失效吗？", a: "创建时可选择 1 天（默认）、2 天、7 天、自定义日期或永久有效。到期后链接无法再打开；你也可以随时手动停用，之后可以重新启用。" },
+  { q: "链接被转发了怎么办？", a: "链接在有效期内，任何拿到它的人都可能打开。如果不希望继续被查看，可以立即停用这条链接。" },
   { q: "更新简历后，之前发出的链接会变吗？", a: "为同一份简历上传新版后，它的有效链接会自动展示最新版本，有效期与状态保持不变。新上传另一份简历不会影响旧链接。" },
   { q: "必须公开手机号和邮箱吗？", a: "不必。分享页上的公开信息卡和投递留言都是可选的，不填写时招聘方只看到简历本身。私人备注（例如「投给 A 公司产品岗」）只有你自己能看到。" },
   { q: "删除简历后会怎样？", a: "删除后，这份简历的所有分享链接会一起失效，对方无法再查看或下载。" },
@@ -112,7 +112,7 @@ export default async function Home() {
             {!signedIn && <p className="mt-4 text-sm text-muted-foreground">先看看效果？<Link href="/s/demo" className="font-medium text-primary hover:underline">打开示例分享页</Link></p>}
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-1.5"><UserX className="size-4 text-primary" />对方无需注册</li>
-              <li className="flex items-center gap-1.5"><Power className="size-4 text-primary" />链接可随时失活</li>
+              <li className="flex items-center gap-1.5"><Power className="size-4 text-primary" />链接可随时停用</li>
               <li className="flex items-center gap-1.5"><Printer className="size-4 text-primary" />支持打印与下载</li>
             </ul>
           </div>
@@ -160,7 +160,7 @@ export default async function Home() {
               <CardText icon={ShieldCheck} title="谁能看到，说清楚" text="我们不说「绝对安全」，只把每条链接谁能看到讲明白，并让你随时收回。" />
             </div>
             <ul className="grid gap-3 text-[15px] sm:grid-cols-2">
-              {["简历保存在你的个人空间，登录后只有你能管理", "持有有效链接的人可以打开，默认可打印和下载", "链接被转发后，持有者在有效期内仍可能查看", "到期或手动失活后，链接立即无法继续打开"].map((item) => <li key={item} className="flex gap-2.5 rounded-lg bg-muted/60 px-4 py-3 leading-relaxed"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />{item}</li>)}
+              {["简历保存在你的个人空间，登录后只有你能管理", "持有有效链接的人可以打开，默认可打印和下载", "链接被转发后，持有者在有效期内仍可能查看", "到期或手动停用后，链接立即无法继续打开"].map((item) => <li key={item} className="flex gap-2.5 rounded-lg bg-muted/60 px-4 py-3 leading-relaxed"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />{item}</li>)}
             </ul>
           </div>
         </div>
@@ -215,7 +215,7 @@ export default async function Home() {
       {/* 免注册使用：两张方案卡逐行对齐，代替原来的三列表格 */}
       {!signedIn && <section id="guest" className={sectionY}>
         <div className={container}>
-          <SectionHeading eyebrow="免注册使用" title="急着投一份？不注册也行" text="上传、预览、创建有期限的链接、随时失活，这些都不需要账号。游客空间有数量和时间限制，需要长期使用时再注册。" />
+          <SectionHeading eyebrow="免注册使用" title="急着投一份？不注册也行" text="上传、预览、创建有期限的链接、随时停用，这些都不需要账号。游客空间有数量和时间限制，需要长期使用时再注册。" />
           <div className={cn(contentTop, cardGrid, "mx-auto max-w-4xl md:grid-cols-2")}>
             {plans.map((plan) => {
               const member = plan.key === "member";

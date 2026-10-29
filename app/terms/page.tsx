@@ -25,7 +25,7 @@ export default async function TermsPage() {
         <li>请只上传你有权使用、内容真实的简历，不得上传违法、侵权或含恶意代码的文件。</li>
         <li>简历内容的版权与责任归你本人所有，我们只为提供服务而保存和展示它。</li>
       </ul> },
-      { title: "分享链接", body: <p>分享链接由你创建和管理。在有效期内，任何持有链接的人都可以查看、打印和下载简历；请只把链接发给你信任的对象，必要时及时失活。</p> },
+      { title: "分享链接", body: <p>分享链接由你创建和管理。在有效期内，任何持有链接的人都可以查看、打印和下载简历；请只把链接发给你信任的对象，必要时及时停用。</p> },
       { title: "服务变更与中断", body: <p>本服务仍在持续开发，功能可能调整。我们会尽力保障数据安全与可用性，但无法保证服务永不中断，建议你在本地保留简历原文件。</p> },
       { title: "联系我们", body: <p>问题与建议请在 <a className="text-primary underline underline-offset-4" href={ISSUES} target="_blank" rel="noopener noreferrer">GitHub Issues</a> 反馈。</p> },
     ]}

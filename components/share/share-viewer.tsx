@@ -2,26 +2,39 @@
 
 /**
  * 接收方看到的简历分享页：优先阅读，其次打印/下载。
- * 公开信息卡与投递说明只在求职者填写时出现；页数、缩放、适应宽度辅助阅读。
+ * 公开信息卡与投递说明只在求职者填写时出现；示例页用虚构内容，并提供页数、缩放、适应宽度辅助阅读。
+ * 真实分享渲染 PDF，并定期（及回到前台、网络恢复时）检查链接状态：停用或失效后立即移除简历内容。
+ * 网络错误不当作失效，只等下一次检查。
  */
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowDownToLine, Info, Mail, MapPin, Maximize2, Minus, Phone, Plus, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Brand } from "@/components/site/brand";
 import { Button } from "@/components/ui/button";
 import type { DemoShare, ResumeContent } from "@/lib/demo-data";
+import { PdfPreview } from "@/components/workspace/pdf-preview";
 import { ResumePaper } from "./resume-paper";
+import { ShareUnavailable } from "./share-unavailable";
 import Link from "next/link";
 
 const PAGE_WIDTH = 794; // A4 在 96dpi 下的宽度
 const PAGES = [1, 2] as const;
 const ZOOM_STEPS = [0.6, 0.75, 0.9, 1, 1.15, 1.3, 1.5];
 
-type Props = { share: DemoShare; resume: ResumeContent; demo?: boolean };
+const STATUS_INTERVAL_MS = 30_000;
 
-export function ShareViewer({ share, resume, demo }: Props) {
+type Props =
+  | { share: DemoShare; resume: ResumeContent; demo: true }
+  | { share: DemoShare; token: string; demo?: false };
+
+export function ShareViewer(props: Props) {
+  const { share, demo } = props;
   // null 表示「适应宽度」
   const [zoom, setZoom] = useState<number | null>(null);
+  const [gone, setGone] = useState<"inactive" | "missing" | null>(null);
+  const [printReady, setPrintReady] = useState(false);
+  const token = props.demo ? null : props.token;
+  const fileUrl = token ? `/api/s/${token}/file` : "";
   const { profile } = share;
   const hasProfile = Boolean(profile.name || profile.role || profile.location || profile.email || profile.phone);
   const current = zoom ?? 1;
@@ -32,9 +45,28 @@ export function ShareViewer({ share, resume, demo }: Props) {
     setZoom(next);
   }
 
-  function download() {
-    if (demo) { toast.info("这是示例页面，没有可下载的文件。"); return; }
-  }
+  const check = useCallback(async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`/api/s/${token}`, { cache: "no-store" });
+      if (!response.ok) return;
+      const { state } = await response.json() as { state: string };
+      if (state === "inactive" || state === "missing") setGone(state);
+    } catch {
+      // 网络中断不代表链接失效
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    const timer = setInterval(() => { if (document.visibilityState === "visible") void check(); }, STATUS_INTERVAL_MS);
+    const onVisible = () => { if (document.visibilityState === "visible") void check(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", onVisible);
+    return () => { clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); window.removeEventListener("online", onVisible); };
+  }, [token, check]);
+
+  if (gone) return <ShareUnavailable state={gone} />;
 
   return <div className="flex min-h-screen flex-col bg-[#e9edf2] print:block print:bg-white">
     <header className="border-b bg-card print:hidden">
@@ -69,27 +101,30 @@ export function ShareViewer({ share, resume, demo }: Props) {
     {/* 阅读工具栏 */}
     <div className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur print:hidden">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
-        <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">简历</span> · 共 {PAGES.length} 页</p>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className="hidden items-center rounded-md border sm:flex" role="group" aria-label="缩放">
+        <p className="min-w-0 truncate text-sm text-muted-foreground"><span className="font-medium text-foreground">简历</span> · {demo ? `共 ${PAGES.length} 页` : share.fileName}</p>
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {demo && <div className="hidden items-center rounded-md border sm:flex" role="group" aria-label="缩放">
             <Button variant="ghost" size="icon" className="rounded-r-none" onClick={() => step(-1)} disabled={current <= ZOOM_STEPS[0]} aria-label="缩小"><Minus /></Button>
             <span className="w-14 text-center text-sm tabular-nums" aria-live="polite">{zoom === null ? "适应" : `${Math.round(current * 100)}%`}</span>
             <Button variant="ghost" size="icon" className="rounded-l-none" onClick={() => step(1)} disabled={current >= ZOOM_STEPS[ZOOM_STEPS.length - 1]} aria-label="放大"><Plus /></Button>
-          </div>
-          <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => setZoom(null)} aria-pressed={zoom === null}><Maximize2 />适应宽度</Button>
-          <Button variant="outline" onClick={() => window.print()}><Printer /><span className="hidden sm:inline">打印</span></Button>
-          <Button onClick={download}><ArrowDownToLine /><span className="hidden sm:inline">下载</span></Button>
+          </div>}
+          {demo && <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => setZoom(null)} aria-pressed={zoom === null}><Maximize2 />适应宽度</Button>}
+          <Button variant="outline" onClick={() => window.print()} disabled={!demo && !printReady}><Printer /><span className="hidden sm:inline">打印</span></Button>
+          {demo ? <Button onClick={() => toast.info("这是示例页面，没有可下载的文件。")}><ArrowDownToLine /><span className="hidden sm:inline">下载</span></Button>
+            : <Button asChild><a href={`${fileUrl}?download=1`} download><ArrowDownToLine /><span className="hidden sm:inline">下载</span></a></Button>}
         </div>
       </div>
     </div>
 
     <main id="main" className="flex-1 overflow-x-auto px-3 py-6 sm:px-6 sm:py-10 print:overflow-visible print:p-0">
-      <div className="mx-auto flex flex-col gap-6 print:block print:w-full!" style={{ width: zoom === null ? `min(100%, ${PAGE_WIDTH}px)` : `${PAGE_WIDTH * zoom}px` }}>
+      {props.demo ? <div className="mx-auto flex flex-col gap-6 print:block print:w-full!" style={{ width: zoom === null ? `min(100%, ${PAGE_WIDTH}px)` : `${PAGE_WIDTH * zoom}px` }}>
         {PAGES.map((page) => <div key={page} className="break-after-page last:break-after-auto">
-          <ResumePaper resume={resume} page={page} />
+          <ResumePaper resume={props.resume} page={page} />
           <p className="mt-2 text-center text-xs text-muted-foreground print:hidden">第 {page} / {PAGES.length} 页</p>
         </div>)}
-      </div>
+      </div> : <div className="mx-auto print:w-full" style={{ width: `min(100%, ${PAGE_WIDTH}px)` }}>
+        <PdfPreview url={fileUrl} onReady={setPrintReady} />
+      </div>}
       <p className="mt-6 text-center text-xs text-muted-foreground sm:hidden print:hidden">手机无法直接打印时，可下载后再打印。</p>
     </main>
 

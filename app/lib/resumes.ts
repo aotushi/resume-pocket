@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import { guestDeleteAt, isGuestExpired } from "./guest-policy";
 import type { Owner } from "./owner";
-import { hasMagic, isResumeId, type SourceType, sourceTypeOf } from "./resume-policy";
+import { hasMagic, isResumeId, SOURCE_MIME, type SourceType, sourceTypeOf } from "./resume-policy";
 
 export { isResumeId, isSameOrigin, ownerPrefix, readBoundedFile, safeFilename, SOURCE_MIME, sourceTypeOf, type SourceType } from "./resume-policy";
 
@@ -71,4 +71,30 @@ export async function convertWordToPdf(bytes: Uint8Array, type: Exclude<SourceTy
   const pdf = new Uint8Array(await response.arrayBuffer());
   if (!hasMagic(pdf, "pdf")) throw new Error("Converter returned an invalid PDF");
   return pdf;
+}
+
+/**
+ * 返回简历文件：默认内联 PDF（预览、打印）；`download` 非空时作为附件下载原件（Word 简历即 Word 原件），
+ * `download === "pdf"` 始终下载 PDF 版本。所有者接口与分享接口共用。
+ */
+export async function resumeFileResponse(prefix: string, resume: Resume, download: string | null) {
+  const bucket = getBucket();
+  const wantOriginal = download !== null && download !== "pdf" && resume.source !== "pdf";
+  const file = await bucket.get(`${prefix}${resume.id}.${wantOriginal ? resume.source : "pdf"}`);
+  if (!file) return Response.json({ error: "未找到这份简历的文件。" }, { status: 404 });
+  const ext = wantOriginal ? resume.source : "pdf";
+  const name = resume.name.replace(/\.(pdf|docx|doc)$/i, "") + `.${ext}`;
+  const encodedName = encodeURIComponent(name).replace(/['()*]/g, (character) =>
+    `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+  return new Response(file.body, {
+    headers: {
+      "Content-Type": SOURCE_MIME[ext],
+      "Content-Length": String(file.size),
+      "Content-Disposition": `${download !== null ? "attachment" : "inline"}; filename="resume.${ext}"; filename*=UTF-8''${encodedName}`,
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; sandbox",
+    },
+  });
 }

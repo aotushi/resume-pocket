@@ -1,5 +1,6 @@
 import { resolveOwner } from "../../../lib/owner";
-import { getBucket, isResumeId, isSameOrigin, resumeFromObject, SOURCE_MIME } from "../../../lib/resumes";
+import { deleteLinksForResume } from "../../../lib/shares";
+import { getBucket, isResumeId, isSameOrigin, resumeFileResponse, resumeFromObject } from "../../../lib/resumes";
 
 export const dynamic = "force-dynamic";
 
@@ -16,29 +17,10 @@ export async function GET(request: Request, { params }: Context) {
   if (!isResumeId(id)) return Response.json({ error: "未找到这份简历。" }, { status: 404 });
 
   try {
-    const bucket = getBucket();
-    const object = await bucket.get(`${owner.prefix}${id}.pdf`);
+    const object = await getBucket().head(`${owner.prefix}${id}.pdf`);
     const resume = object && resumeFromObject(object, owner.kind);
-    if (!object || !resume) return Response.json({ error: "未找到这份简历。" }, { status: 404 });
-    const download = new URL(request.url).searchParams.get("download");
-    const wantOriginal = download !== null && download !== "pdf" && resume.source !== "pdf";
-    const file = wantOriginal ? await bucket.get(`${owner.prefix}${id}.${resume.source}`) : object;
-    if (!file) return Response.json({ error: "未找到这份简历的原件。" }, { status: 404 });
-    const ext = wantOriginal ? resume.source : "pdf";
-    const name = resume.name.replace(/\.(pdf|docx|doc)$/i, "") + `.${ext}`;
-    const encodedName = encodeURIComponent(name).replace(/['()*]/g, (character) =>
-      `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
-    );
-    return new Response(file.body, {
-      headers: {
-        "Content-Type": SOURCE_MIME[ext],
-        "Content-Length": String(file.size),
-        "Content-Disposition": `${download !== null ? "attachment" : "inline"}; filename="resume.${ext}"; filename*=UTF-8''${encodedName}`,
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-        "Content-Security-Policy": "default-src 'none'; sandbox",
-      },
-    });
+    if (!resume) return Response.json({ error: "未找到这份简历。" }, { status: 404 });
+    return await resumeFileResponse(owner.prefix, resume, new URL(request.url).searchParams.get("download"));
   } catch (error) {
     console.error("Could not read resume", error);
     return Response.json({ error: "暂时无法打开简历，请稍后重试。" }, { status: 500 });
@@ -54,6 +36,8 @@ export async function DELETE(request: Request, { params }: Context) {
   try {
     // 连同可能存在的 Word 原件一起删除
     await getBucket().delete(["pdf", "docx", "doc"].map((ext) => `${owner.prefix}${id}.${ext}`));
+    // 再清理分享记录：即使这一步失败，公开访问也会因找不到简历而失效
+    await deleteLinksForResume(owner.prefix, id).catch((error) => console.error("Could not delete share links", error));
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error("Could not delete resume", error);

@@ -2,7 +2,7 @@
 
 /**
  * 「我的简历」：上传、列表、预览、打印、下载、删除，均对接现有 /api/resumes。
- * 分享入口暂为禁用态，待分享后端实现后接入。
+ * 选中简历下方是它的分享链接面板（游客空间由 GuestSpace 自行放置）。
  * guest 模式用于 /try 游客空间：同一套接口按游客 Cookie 识别所有者，只能保存 1 份，并显示自动删除时间。
  */
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ShareLinksPanel } from "@/components/share/share-links-panel";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "./page-header";
 import { PdfPreview } from "./pdf-preview";
@@ -44,6 +45,7 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
   const [printReady, setPrintReady] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Resume | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [pendingLinks, setPendingLinks] = useState<{ id: string; count: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLElement>(null);
   const selectedIdRef = useRef<string | null>(null);
@@ -111,6 +113,18 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
       if (inputRef.current) inputRef.current.value = "";
     }
   }
+
+  // 删除前告知会失效的分享链接数量；读取失败时只是不显示数量
+  useEffect(() => {
+    if (!pendingDelete) return;
+    const { id } = pendingDelete;
+    let active = true;
+    fetch(`/api/shares?resume=${id}`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() as Promise<{ links: unknown[] }> : null)
+      .then((data) => { if (active && data) setPendingLinks({ id, count: data.links.length }); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [pendingDelete]);
 
   async function removeResume() {
     if (!pendingDelete || deleting) return;
@@ -200,10 +214,7 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">{formatSize(selected.size)}<Badge variant="secondary" className="font-normal">仅自己可见</Badge>{selected.source !== "pdf" && <span>预览为转换后的 PDF，排版可能与 Word 略有差异</span>}</p>
           </div>
           <div className="flex items-center gap-2">
-            {guest ? <Button variant="outline" asChild><a href="#guest-share"><Share2 />分享</a></Button> : <Tooltip>
-              <TooltipTrigger asChild><span tabIndex={0}><Button variant="outline" disabled><Share2 />分享</Button></span></TooltipTrigger>
-              <TooltipContent>分享链接功能即将推出</TooltipContent>
-            </Tooltip>}
+            <Button variant="outline" asChild><a href="#share-links"><Share2 />分享</a></Button>
             <Button variant="outline" disabled={!printReady} onClick={() => window.print()} title={printReady ? "打印简历" : "正在准备预览"}><Printer /><span className="hidden sm:inline">打印</span></Button>
             <Button asChild><a href={`/api/resumes/${selected.id}?download=1`} download title={selected.source !== "pdf" ? "下载 Word 原文件" : undefined}><ArrowDownToLine /><span className="hidden sm:inline">下载</span></a></Button>
             <DropdownMenu>
@@ -223,11 +234,13 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
       </section>}
     </div>}
 
+    {!guest && !loading && selected && <div className="mt-6"><ShareLinksPanel key={selected.id} resume={selected} /></div>}
+
     <AlertDialog open={Boolean(pendingDelete)} onOpenChange={(open) => { if (!open && !deleting) setPendingDelete(null); }}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>删除这份简历？</AlertDialogTitle>
-          <AlertDialogDescription className="break-all">「{pendingDelete?.name}」将从你的空间中永久删除{guest && "，已创建的分享链接一并失效"}，此操作无法撤销。</AlertDialogDescription>
+          <AlertDialogDescription className="break-all">「{pendingDelete?.name}」将从你的空间中永久删除{pendingLinks?.id === pendingDelete?.id && pendingLinks?.count ? `，它的 ${pendingLinks.count} 条分享链接将全部失效` : ""}，此操作无法撤销。</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={deleting}>取消</AlertDialogCancel>

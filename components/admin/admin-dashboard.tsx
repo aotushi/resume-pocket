@@ -58,7 +58,7 @@ function Overview() {
   const segments = [
     { key: "active", label: "生效", value: shares.active, className: "bg-primary" },
     { key: "expired", label: "已过期", value: shares.expired, className: "bg-chart-3" },
-    { key: "inactive", label: "已失活", value: shares.inactive, className: "bg-muted-foreground/40" },
+    { key: "inactive", label: "已停用", value: shares.inactive, className: "bg-muted-foreground/40" },
   ];
 
   return <div className="grid grid-cols-1 gap-6">

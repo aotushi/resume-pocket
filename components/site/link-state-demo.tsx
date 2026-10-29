@@ -2,7 +2,7 @@
 
 /**
  * 首页「按对象分享」演示：左侧是求职者的链接列表（虚构），右侧手机框是招聘方打开该链接看到的样子。
- * 点击不同链接即可对比有效、永久、已过期、已失活四种状态，说明「每条链接互不影响、随时可收回」。
+ * 点击不同链接即可对比有效、永久、已过期、已停用四种状态，说明「每条链接互不影响、随时可收回」。
  */
 import { useState } from "react";
 import { ArrowDownToLine, BatteryFull, CircleOff, Clock3, Eye, FileText, Infinity as InfinityIcon, Link2Off, Lock, MapPin, Printer, Signal, Wifi } from "lucide-react";
@@ -16,14 +16,14 @@ const links: { id: string; target: string; created: string; expiry: string; stat
   { id: "a", target: "示例公司 A · 产品岗", created: "10 月 28 日创建", expiry: "1 天后到期", state: "active", views: 3, note: "您好，我想应聘贵司的产品经理岗位，以下是我的简历，感谢查阅。" },
   { id: "b", target: "猎头 王女士", created: "9 月 2 日创建", expiry: "永久有效", state: "permanent", views: 7, note: "王女士您好，这是我最新的简历，方便时请帮我推荐合适的机会。" },
   { id: "c", target: "示例公司 B · 校招", created: "10 月 14 日创建", expiry: "已于 10 月 21 日到期", state: "expired", views: 2, note: "" },
-  { id: "d", target: "示例公司 C", created: "10 月 25 日创建", expiry: "7 天有效 · 已手动失活", state: "inactive", views: 1, note: "" },
+  { id: "d", target: "示例公司 C", created: "10 月 25 日创建", expiry: "7 天有效 · 已手动停用", state: "inactive", views: 1, note: "" },
 ];
 
 const stateMeta: Record<LinkState, { label: string; className: string }> = {
   active: { label: "有效", className: "bg-success/12 text-success" },
   permanent: { label: "永久", className: "bg-secondary text-primary" },
   expired: { label: "已过期", className: "bg-muted text-muted-foreground" },
-  inactive: { label: "已失活", className: "bg-warning/15 text-warning" },
+  inactive: { label: "已停用", className: "bg-warning/15 text-warning" },
 };
 
 export function LinkStateDemo() {
@@ -62,7 +62,7 @@ export function LinkStateDemo() {
           </li>;
         })}
       </ul>
-      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">每家公司一条独立链接：有效期、留言和状态各自独立，失活其中一条不影响其他链接。</p>
+      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">每家公司一条独立链接：有效期、留言和状态各自独立，停用其中一条不影响其他链接。</p>
     </div>
 
     {/* 招聘方视角：手机框 */}

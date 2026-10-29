@@ -11,7 +11,7 @@ import type { Resume } from "@/app/lib/resumes";
 import { AuthButton } from "@/components/auth/auth-dialog";
 import { Button } from "@/components/ui/button";
 import { ResumeWorkspace } from "@/components/workspace/resume-workspace";
-import { GuestSharePanel } from "./guest-share-panel";
+import { ShareLinksPanel } from "@/components/share/share-links-panel";
 
 export function GuestSpace() {
   const [workspaceKey, setWorkspaceKey] = useState(0);
@@ -36,7 +36,7 @@ export function GuestSpace() {
     <ResumeWorkspace key={workspaceKey} guest onResumesChange={setResumes} />
     {resume && <>
       <ManageLinkCard key={resume.id} />
-      <GuestSharePanel key={`share-${resume.id}`} resume={resume} />
+      <ShareLinksPanel key={`share-${resume.id}`} resume={resume} guest />
     </>}
     <UpgradeCard />
   </div>;
@@ -76,7 +76,7 @@ function ManageLinkCard() {
       <span className="hidden size-10 shrink-0 place-items-center rounded-lg bg-warning/15 text-warning sm:grid"><KeyRound className="size-5" /></span>
       <div className="min-w-0 flex-1">
         <h2 id="manage-title" className="font-semibold">保存你的管理链接</h2>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">游客没有账号，这个浏览器靠它记住你。换设备或清除浏览器数据后，只能用管理链接继续失活链接或删除简历。<strong className="font-medium text-foreground">它相当于密码，不要发给招聘方</strong>——发给对方的是下方的分享链接。</p>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">游客没有账号，这个浏览器靠它记住你。换设备或清除浏览器数据后，只能用管理链接继续停用链接或删除简历。<strong className="font-medium text-foreground">它相当于密码，不要发给招聘方</strong>——发给对方的是下方的分享链接。</p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <code className="min-w-0 flex-1 truncate rounded-md border bg-card px-3 py-2 text-xs leading-5">{visible ? url : base + "•".repeat(24)}</code>
           <div className="flex gap-2">
