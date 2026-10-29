@@ -19,8 +19,8 @@
   // 本地 dev 不启动容器（Windows 不支持）：手动 docker run 转换镜像，并在 .dev.vars 设置 WORD_CONVERTER_URL
   "dev": { "enable_containers": false },
   "vars": { "WORD_CONVERTER_URL": "" },
-  // image_vars.APT_MIRROR：本机网络访问 deb.debian.org 不稳定，构建镜像时改用清华源；不需要可删
-  "containers": [{ "class_name": "WordConverter", "image": "./converter/Dockerfile", "instance_type": "basic", "max_instances": 3, "image_vars": { "APT_MIRROR": "mirrors.tuna.tsinghua.edu.cn" } }],
+  // 镜像由 Workers Builds 在海外构建，直接用 deb.debian.org；本机手动构建需要国内源时用 --build-arg APT_MIRROR（见 README）
+  "containers": [{ "class_name": "WordConverter", "image": "./converter/Dockerfile", "instance_type": "basic", "max_instances": 3 }],
   "durable_objects": { "bindings": [{ "name": "WORD_CONVERTER", "class_name": "WordConverter" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WordConverter"] }],
   "ratelimits": [
