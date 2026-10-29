@@ -10,7 +10,7 @@
     {
       "binding": "DB",
       "database_name": "resume-pocket-auth",
-      "database_id": "00000000-0000-4000-8000-000000000000",
+      "database_id": "6c90b051-f694-4c20-a048-fe41b577def8",
       "migrations_dir": "migrations"
     }
   ],
