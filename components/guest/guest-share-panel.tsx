@@ -120,8 +120,8 @@ function LinkRow({ link, now, onToggle }: { link: ShareLink; now: number; onTogg
   }
 
   return <li className={cn("rounded-lg border p-4", !usable && "bg-muted/40")}>
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{link.target}</p>
         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span>创建于 {formatDateTime(link.createdAt)}</span>
@@ -129,10 +129,10 @@ function LinkRow({ link, now, onToggle }: { link: ShareLink; now: number; onTogg
           <span className="inline-flex items-center gap-1"><Eye className="size-3" />{link.views} 次访问</span>
         </p>
       </div>
-      <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", usable ? "bg-success/12 text-success" : expired ? "bg-muted text-muted-foreground" : "bg-warning/15 text-warning")}>{usable ? "有效" : expired ? "已过期" : "已失活"}</span>
+      <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium", usable ? "bg-success/12 text-success" : expired ? "bg-muted text-muted-foreground" : "bg-warning/15 text-warning")}>{usable ? "有效" : expired ? "已过期" : "已失活"}</span>
     </div>
     {link.note && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">留言：{link.note}</p>}
-    <div className="mt-3 flex flex-wrap gap-2">
+    <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
       <Button size="sm" onClick={() => void share()} disabled={!usable}><Share />分享</Button>
       <Button size="sm" variant="outline" onClick={() => void copy()} disabled={!usable}>{copied ? <Check /> : <Copy />}复制链接</Button>
       {usable && <QrDialog url={url} target={link.target} />}

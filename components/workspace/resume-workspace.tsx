@@ -195,7 +195,7 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
       {/* 预览 */}
       {selected && <section ref={previewRef} aria-label="简历预览" className="min-w-0 overflow-hidden rounded-xl border bg-card print:overflow-visible print:rounded-none print:border-0">
         <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-5 print:hidden">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-48 flex-1">
             <p className="truncate font-semibold">{selected.name}</p>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">{formatSize(selected.size)}<Badge variant="secondary" className="font-normal">仅自己可见</Badge>{selected.source !== "pdf" && <span>预览为转换后的 PDF，排版可能与 Word 略有差异</span>}</p>
           </div>

@@ -73,7 +73,7 @@ function ManageLinkCard() {
   if (!manageKey) return null;
   return <section aria-labelledby="manage-title" className="rounded-xl border border-warning/40 bg-warning/5 p-5 sm:p-6 print:hidden">
     <div className="flex items-start gap-3">
-      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-warning/15 text-warning"><KeyRound className="size-5" /></span>
+      <span className="hidden size-10 shrink-0 place-items-center rounded-lg bg-warning/15 text-warning sm:grid"><KeyRound className="size-5" /></span>
       <div className="min-w-0 flex-1">
         <h2 id="manage-title" className="font-semibold">保存你的管理链接</h2>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">游客没有账号，这个浏览器靠它记住你。换设备或清除浏览器数据后，只能用管理链接继续失活链接或删除简历。<strong className="font-medium text-foreground">它相当于密码，不要发给招聘方</strong>——发给对方的是下方的分享链接。</p>
