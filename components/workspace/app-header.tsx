@@ -32,7 +32,7 @@ export function AppHeader({ user, admin }: Props) {
 
   return <header className="sticky top-0 z-40 border-b bg-card print:hidden">
     <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
-      <Brand href="/app" />
+      <Brand />
       <nav aria-label="工作区导航" className="flex items-center gap-1">
         {links.map((link) => <Link key={link.href} href={link.href} aria-current={link.active ? "page" : undefined}
           className={cn("flex h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors", link.active ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
