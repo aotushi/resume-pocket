@@ -1,9 +1,10 @@
 import { env } from "cloudflare:workers";
-import { and, count, eq, gt, isNull, or, sql } from "drizzle-orm";
+import { and, count, countDistinct, desc, eq, gt, gte, isNull, or, sql } from "drizzle-orm";
 import { getDb } from "../../db";
-import { shareLink } from "../../db/schema";
-import type { Owner } from "./owner";
+import { shareLink, shareView } from "../../db/schema";
+import { type Owner, resolveOwner } from "./owner";
 import { getBucket, type Resume, resumeFromObject } from "./resumes";
+import { describeAgent, isAutomatedAgent, REPEAT_WINDOW_MS, VIEW_DETAIL_LIMIT, visitorHash } from "./view-policy";
 import { decryptShareToken, hashShareToken, isShareToken, parseProfile, type ShareProfile, type ShareStatus, shareStatus } from "./share-policy";
 
 /**
@@ -102,6 +103,40 @@ export async function resolveShare(token: string): Promise<PublicShare> {
   return { state: "active", link, resume };
 }
 
-export async function addShareView(id: string) {
-  await getDb().update(shareLink).set({ views: sql`${shareLink.views} + 1` }).where(eq(shareLink.id, id));
+/** 记录一次分享页访问；按 view-policy.ts 的规则不计入时返回 false */
+export async function recordShareView(link: ShareLinkRow, request: Request, now = new Date()) {
+  const userAgent = request.headers.get("user-agent") ?? "";
+  if (isAutomatedAgent(userAgent)) return false;
+  // 所有者自己打开（登录账号或游客 Cookie 与链接同属一个空间）不算
+  if ((await resolveOwner(request))?.prefix === link.ownerPrefix) return false;
+
+  const db = getDb();
+  const visitor = await visitorHash(shareSecret(), link.id, request.headers.get("cf-connecting-ip") ?? "local", userAgent);
+  const [recent] = await db.select({ id: shareView.id }).from(shareView).where(and(
+    eq(shareView.linkId, link.id),
+    eq(shareView.visitor, visitor),
+    gte(shareView.viewedAt, new Date(now.getTime() - REPEAT_WINDOW_MS)),
+  )).limit(1);
+  if (recent) return false;
+
+  const cf = (request as Request & { cf?: { country?: string; region?: string; city?: string } }).cf;
+  const place = [cf?.region, cf?.city].filter((part, index, parts) => part && parts.indexOf(part) === index).join(" ");
+  await db.batch([
+    db.insert(shareView).values({ id: crypto.randomUUID(), linkId: link.id, viewedAt: now, visitor, country: cf?.country ?? "", place, ...describeAgent(userAgent) }),
+    db.update(shareLink).set({ views: sql`${shareLink.views} + 1` }).where(eq(shareLink.id, link.id)),
+  ]);
+  return true;
+}
+
+export type ShareViewEntry = { viewedAt: string; country: string; place: string; device: string; browser: string };
+
+/** 所有者查看一条链接的访问明细：最近若干条，以及估算的不同访客数 */
+export async function listShareViews(linkId: string) {
+  const db = getDb();
+  const [rows, [totals]] = await Promise.all([
+    db.select().from(shareView).where(eq(shareView.linkId, linkId)).orderBy(desc(shareView.viewedAt)).limit(VIEW_DETAIL_LIMIT),
+    db.select({ views: count(), visitors: countDistinct(shareView.visitor) }).from(shareView).where(eq(shareView.linkId, linkId)),
+  ]);
+  const views: ShareViewEntry[] = rows.map((row) => ({ viewedAt: row.viewedAt.toISOString(), country: row.country, place: row.place, device: row.device, browser: row.browser }));
+  return { views, recorded: totals?.views ?? 0, visitors: totals?.visitors ?? 0 };
 }

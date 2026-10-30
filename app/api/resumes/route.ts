@@ -1,17 +1,7 @@
 import { FORMAT_ERROR, GUEST_FORMAT_ERROR } from "../../lib/format-copy";
 import { GUEST_MAX_RESUMES, guestCookie, guestPrefix, newGuestKey } from "../../lib/guest-policy";
 import { guestRateLimited, resolveOwner } from "../../lib/owner";
-import {
-  convertWordToPdf,
-  getBucket,
-  isSameOrigin,
-  listResumes,
-  readBoundedFile,
-  resumeFromObject,
-  safeFilename,
-  SOURCE_MIME,
-  sourceTypeOf,
-} from "../../lib/resumes";
+import { isSameOrigin, listResumes, readUpload, resumeFromObject, saveResume, uploadName } from "../../lib/resumes";
 
 export const dynamic = "force-dynamic";
 
@@ -35,14 +25,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return Response.json({ error: "请求来源不正确" }, { status: 403 });
 
-  let name: string | null = null;
-  try {
-    name = safeFilename(decodeURIComponent(request.headers.get("x-resume-name") ?? ""));
-  } catch {
-    // Return the same message as for an invalid name.
-  }
-  const type = name ? sourceTypeOf(name) : null;
-  if (!name || !type) return Response.json({ error: FORMAT_ERROR }, { status: 400 });
+  const named = uploadName(request);
+  if (!named) return Response.json({ error: FORMAT_ERROR }, { status: 400 });
+  const { type } = named;
 
   let owner = await resolveOwner(request);
   let newKey: string | null = null;
@@ -57,38 +42,15 @@ export async function POST(request: Request) {
     }
   }
 
-  let bytes: Uint8Array;
-  try {
-    bytes = await readBoundedFile(request, type);
-  } catch (error) {
-    return Response.json({ error: error instanceof Error ? error.message : "文件读取失败" }, { status: 400 });
-  }
+  const upload = await readUpload(request, type);
+  if (upload instanceof Response) return upload;
 
-  let pdf = bytes;
-  if (type !== "pdf") {
-    try {
-      pdf = await convertWordToPdf(bytes, type);
-    } catch (error) {
-      console.error("Could not convert Word resume", error);
-      return Response.json({ error: "Word 转换失败，文件可能已损坏、加密或格式过旧，请在 Word 中另存为 DOCX 或 PDF 后重试" }, { status: 422 });
-    }
-  }
-
-  const bucket = getBucket();
-  const id = crypto.randomUUID();
-  const originalKey = `${owner.prefix}${id}.${type}`;
   try {
-    // 先存原件再存 PDF：列表只认 PDF，PDF 写入失败时不会出现缺原件的简历
-    if (type !== "pdf") await bucket.put(originalKey, bytes, { httpMetadata: { contentType: SOURCE_MIME[type] } });
-    const object = await bucket.put(`${owner.prefix}${id}.pdf`, pdf, {
-      httpMetadata: { contentType: "application/pdf" },
-      customMetadata: { name: encodeURIComponent(name), source: type },
-    });
+    const object = await saveResume(owner.prefix, crypto.randomUUID(), { ...named, ...upload });
     const headers = newKey ? { "Set-Cookie": guestCookie(newKey, request) } : undefined;
     return Response.json({ resume: resumeFromObject(object, owner.kind) }, { status: 201, headers });
   } catch (error) {
     console.error("Could not save resume", error);
-    if (type !== "pdf") await bucket.delete(originalKey).catch(() => undefined);
     return Response.json({ error: "保存失败，请稍后重试" }, { status: 500 });
   }
 }

@@ -8,7 +8,7 @@
  * 「发送到」只提供私聊类渠道（Telegram、WhatsApp、邮件），不提供 X/Facebook 等公开发帖。
  */
 import { useCallback, useEffect, useState } from "react";
-import { Ban, Check, ChevronDown, Clock3, Copy, Eye, Infinity as InfinityIcon, Link2, Mail, MoreHorizontal, Plus, QrCode, RotateCcw, Send, Share, Trash2 } from "lucide-react";
+import { Ban, Check, ChevronDown, Clock3, Copy, Infinity as InfinityIcon, Link2, Mail, MoreHorizontal, Plus, QrCode, RotateCcw, Send, Share, Trash2 } from "lucide-react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
 import { GUEST_LINK_DAYS } from "@/app/lib/guest-policy";
@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { ShareViewsDialog } from "./share-views-dialog";
 
 type Expiry = { kind: "days"; days: number } | { kind: "until" } | { kind: "permanent" };
 
@@ -283,7 +284,7 @@ function LinkRow({ link, now, busy, onDisable, onEnable, onDelete }: RowProps) {
           <span>创建于 {formatDateTime(link.createdAt)}</span>
           <span className="inline-flex items-center gap-1">{link.expiresAt ? <Clock3 className="size-3" /> : <InfinityIcon className="size-3" />}
             {!link.expiresAt ? "永久有效" : expired ? `已于 ${formatDateTime(link.expiresAt)} 到期` : `${formatDateTime(link.expiresAt)} 到期`}</span>
-          <span className="inline-flex items-center gap-1"><Eye className="size-3" />{link.views} 次访问</span>
+          <ShareViewsDialog linkId={link.id} target={link.target} views={link.views} />
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-1">

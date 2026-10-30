@@ -100,7 +100,7 @@ function PasswordCard() {
 
   return <Card>
     <form onSubmit={submit} className="grid gap-6">
-      <CardHeader><CardTitle>修改密码</CardTitle><CardDescription>修改后，其他设备上的登录会自动退出</CardDescription></CardHeader>
+      <CardHeader><CardTitle>修改密码</CardTitle><CardDescription>修改后，其他设备上的登录会自动退出。用验证码注册的账号还没有密码，可在登录窗口选「用密码登录 → 忘记密码？」设置</CardDescription></CardHeader>
       <CardContent className="grid gap-5">
         <div className="space-y-2 sm:max-w-sm">
           <Label htmlFor="current-password">当前密码</Label>

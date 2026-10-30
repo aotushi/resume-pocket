@@ -31,14 +31,16 @@ export function PdfPreview({ url, onReady }: Props) {
     async function render() {
       try {
         const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-        pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+        // 资源目录按版本号区分（scripts/copy-pdf-worker.mjs），可长期缓存
+        const assets = `/pdfjs/${pdfjs.version}`;
+        pdfjs.GlobalWorkerOptions.workerSrc = `${assets}/pdf.worker.min.mjs`;
         const loadingTask = pdfjs.getDocument({
           url,
           withCredentials: true,
-          cMapUrl: "/pdfjs/cmaps/",
+          cMapUrl: `${assets}/cmaps/`,
           cMapPacked: true,
-          standardFontDataUrl: "/pdfjs/standard_fonts/",
-          wasmUrl: "/pdfjs/wasm/",
+          standardFontDataUrl: `${assets}/standard_fonts/`,
+          wasmUrl: `${assets}/wasm/`,
         });
         destroy = () => loadingTask.destroy();
         const pdf = await loadingTask.promise;

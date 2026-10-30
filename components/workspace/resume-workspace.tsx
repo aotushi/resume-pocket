@@ -1,12 +1,13 @@
 "use client";
 
 /**
- * 「我的简历」：上传、列表、预览、打印、下载、删除，均对接现有 /api/resumes。
+ * 「我的简历」：上传、替换、列表、预览、打印、下载、删除，均对接现有 /api/resumes。
+ * 替换文件保留简历 id，已发出的分享链接随之显示新版本；文件地址带版本号 `?v=`，浏览器可长期缓存。
  * 选中简历下方是它的分享链接面板（游客空间由 GuestSpace 自行放置）。
  * guest 模式用于 /try 游客空间：同一套接口按游客 Cookie 识别所有者，只能保存 1 份，并显示自动删除时间。
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowDownToLine, CloudUpload, ExternalLink, FileDown, FileText, MoreHorizontal, Plus, Printer, Share2, Trash2 } from "lucide-react";
+import { ArrowDownToLine, CloudUpload, ExternalLink, FileDown, FileText, MoreHorizontal, Plus, Printer, RefreshCw, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { FORMAT_ERROR, GUEST_FORMAT_ERROR, GUEST_FORMATS, GUEST_PICK_ERROR, MAX_SIZE_TEXT, SIZE_ERROR, USER_FORMATS } from "@/app/lib/format-copy";
 import { MAX_RESUME_BYTES } from "@/app/lib/resume-policy";
@@ -31,6 +32,7 @@ const formatSize = (bytes: number) => bytes < 1024 * 1024
   ? `${Math.max(1, Math.round(bytes / 1024))} KB`
   : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 const formatDate = (date: string) => new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(date));
+const fileUrl = (resume: Resume, query = "") => `/api/resumes/${resume.id}?v=${encodeURIComponent(resume.version)}${query}`;
 const formatDay = (date: string) => new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric" }).format(new Date(date));
 
 type Props = { guest?: boolean; onResumesChange?: (resumes: Resume[]) => void };
@@ -48,10 +50,12 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [pendingLinks, setPendingLinks] = useState<{ id: string; count: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const replaceRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLElement>(null);
   const selectedIdRef = useRef<string | null>(null);
   const selected = resumes.find((resume) => resume.id === selectedId) ?? null;
   const canUpload = !guest || resumes.length === 0;
+  const [replacing, setReplacing] = useState(false);
   const uploadingLabel = converting ? "正在转换 Word…" : "上传中…";
 
   const updateResumes = useCallback((next: Resume[]) => {
@@ -90,13 +94,20 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
 
   useEffect(() => load(), [load]);
 
-  async function upload(file?: File) {
-    if (!file || uploading || !canUpload) return;
+  /** 前端先校验格式与大小；返回是否为 Word，不合法时为 null */
+  function checkFile(file: File) {
     const lower = file.name.toLowerCase();
     const isWord = lower.endsWith(".docx") || lower.endsWith(".doc");
-    if (guest && isWord) { toast.error(GUEST_FORMAT_ERROR); return; }
-    if (!lower.endsWith(".pdf") && !isWord) { toast.error(guest ? GUEST_PICK_ERROR : FORMAT_ERROR); return; }
-    if (file.size > MAX_RESUME_BYTES) { toast.error(SIZE_ERROR); return; }
+    if (guest && isWord) { toast.error(GUEST_FORMAT_ERROR); return null; }
+    if (!lower.endsWith(".pdf") && !isWord) { toast.error(guest ? GUEST_PICK_ERROR : FORMAT_ERROR); return null; }
+    if (file.size > MAX_RESUME_BYTES) { toast.error(SIZE_ERROR); return null; }
+    return isWord;
+  }
+
+  async function upload(file?: File) {
+    if (!file || uploading || !canUpload) return;
+    const isWord = checkFile(file);
+    if (isWord === null) return;
     setUploading(true);
     setConverting(isWord);
     try {
@@ -112,6 +123,28 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
       setUploading(false);
       setConverting(false);
       if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  async function replace(target: Resume, file?: File) {
+    if (!file || replacing) return;
+    const isWord = checkFile(file);
+    if (isWord === null) return;
+    setReplacing(true);
+    setConverting(isWord);
+    try {
+      const response = await fetch(`/api/resumes/${target.id}`, { method: "PUT", headers: { "Content-Type": file.type || "application/octet-stream", "X-Resume-Name": encodeURIComponent(file.name) }, body: file });
+      const data = await response.json() as { error?: string; resume: Resume };
+      if (!response.ok) throw new Error(data.error || "替换失败，请重试");
+      setPrintReady(false);
+      updateResumes(resumes.map((resume) => resume.id === target.id ? data.resume : resume));
+      toast.success("已替换为新文件", { description: "已发出的分享链接同步显示新版本" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "替换失败，请重试");
+    } finally {
+      setReplacing(false);
+      setConverting(false);
+      if (replaceRef.current) replaceRef.current.value = "";
     }
   }
 
@@ -160,6 +193,8 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
   return <TooltipProvider>
     <input ref={inputRef} className="sr-only" type="file" accept={guest ? PDF_ACCEPT : WORD_ACCEPT} aria-label={`选择 ${guest ? GUEST_FORMATS : USER_FORMATS} 简历`} tabIndex={-1}
       onChange={(event) => { const file = event.currentTarget.files?.[0]; void upload(file); }} />
+    <input ref={replaceRef} className="sr-only" type="file" accept={guest ? PDF_ACCEPT : WORD_ACCEPT} aria-label="选择用于替换的新文件" tabIndex={-1}
+      onChange={(event) => { const file = event.currentTarget.files?.[0]; if (selected) void replace(selected, file); }} />
 
     <PageHeader title={guest ? "游客空间" : "我的简历"}
       description={guest ? `无需注册：上传 1 份 ${GUEST_FORMATS} 简历，预览后创建短期分享链接` : `保存、预览并下载你准备好的 ${USER_FORMATS} 简历`}
@@ -204,7 +239,7 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
         </ul>
         {canUpload ? <div {...dropHandlers} className={cn("mt-3 rounded-lg border-2 border-dashed p-4 text-center text-xs text-muted-foreground transition-colors", dragging ? "border-primary bg-secondary text-secondary-foreground" : "border-border")}>
           {uploading ? uploadingLabel : `拖放 ${guest ? GUEST_FORMATS : USER_FORMATS} 到这里快速上传`}
-        </div> : <p className="mt-3 rounded-lg bg-muted p-3 text-xs leading-relaxed text-muted-foreground">游客只能保存 1 份简历。要换一份，请先删除这份；注册后可保存多份。</p>}
+        </div> : <p className="mt-3 rounded-lg bg-muted p-3 text-xs leading-relaxed text-muted-foreground">游客只能保存 1 份简历。要换一份，可在预览右上角「⋯」中替换文件，已发出的链接会同步更新；注册后可保存多份。</p>}
       </section>
 
       {/* 预览 */}
@@ -212,17 +247,18 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
         <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-5 print:hidden">
           <div className="min-w-48 flex-1">
             <p className="truncate font-semibold">{selected.name}</p>
-            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">{formatSize(selected.size)}<Badge variant="secondary" className="font-normal">仅自己可见</Badge>{selected.source !== "pdf" && <span>预览为转换后的 PDF，排版可能与 Word 略有差异</span>}</p>
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">{replacing ? <span className="inline-flex items-center gap-1"><Spinner />{converting ? "正在转换 Word…" : "正在替换…"}</span> : formatSize(selected.size)}<Badge variant="secondary" className="font-normal">仅自己可见</Badge>{selected.source !== "pdf" && <span>预览为转换后的 PDF，排版可能与 Word 略有差异</span>}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild><a href="#share-links"><Share2 />分享</a></Button>
             <Button variant="outline" disabled={!printReady} onClick={() => window.print()} title={printReady ? "打印简历" : "正在准备预览"}><Printer /><span className="hidden sm:inline">打印</span></Button>
-            <Button asChild><a href={`/api/resumes/${selected.id}?download=1`} download title={selected.source !== "pdf" ? "下载 Word 原文件" : undefined}><ArrowDownToLine /><span className="hidden sm:inline">下载</span></a></Button>
+            <Button asChild><a href={fileUrl(selected, "&download=1")} download title={selected.source !== "pdf" ? "下载 Word 原文件" : undefined}><ArrowDownToLine /><span className="hidden sm:inline">下载</span></a></Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="更多操作"><MoreHorizontal /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild><a href={`/api/resumes/${selected.id}`} target="_blank" rel="noopener noreferrer"><ExternalLink />在新标签页打开</a></DropdownMenuItem>
-                {selected.source !== "pdf" && <DropdownMenuItem asChild><a href={`/api/resumes/${selected.id}?download=pdf`} download><FileDown />下载 PDF 版本</a></DropdownMenuItem>}
+                <DropdownMenuItem asChild><a href={fileUrl(selected)} target="_blank" rel="noopener noreferrer"><ExternalLink />在新标签页打开</a></DropdownMenuItem>
+                {selected.source !== "pdf" && <DropdownMenuItem asChild><a href={fileUrl(selected, "&download=pdf")} download><FileDown />下载 PDF 版本</a></DropdownMenuItem>}
+                <DropdownMenuItem disabled={replacing} onSelect={() => replaceRef.current?.click()}><RefreshCw />替换文件</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive" onSelect={() => setPendingDelete(selected)}><Trash2 />删除</DropdownMenuItem>
               </DropdownMenuContent>
@@ -230,7 +266,7 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
           </div>
         </div>
         <div className="max-h-[calc(100vh-14rem)] min-h-[420px] overflow-auto bg-[#e9edf2] p-4 sm:p-8 print:max-h-none print:min-h-0 print:overflow-visible print:bg-white print:p-0">
-          <PdfPreview key={selected.id} url={`/api/resumes/${selected.id}`} onReady={setPrintReady} />
+          <PdfPreview key={`${selected.id}:${selected.version}`} url={fileUrl(selected)} onReady={setPrintReady} />
         </div>
       </section>}
     </div>}

@@ -64,3 +64,20 @@ export const shareLink = sqliteTable("share_link", {
   views: integer("views").notNull().default(0),
   createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
 }, (table) => [index("share_link_owner_resume_idx").on(table.ownerPrefix, table.resumeId)]);
+
+/**
+ * 分享页访问明细：每条是一次被计入的访问（规则见 app/lib/view-policy.ts），供所有者查看。
+ * 不存 IP 和完整 User-Agent：地区来自 Cloudflare 的粗略定位，visitor 是不可还原的摘要，只用于去重。
+ */
+export const shareView = sqliteTable("share_view", {
+  id: text("id").primaryKey(),
+  linkId: text("linkId").notNull().references(() => shareLink.id, { onDelete: "cascade" }),
+  viewedAt: integer("viewedAt", { mode: "timestamp_ms" }).notNull(),
+  visitor: text("visitor").notNull(),
+  /** ISO 国家或地区代码，前端换成中文名 */
+  country: text("country").notNull().default(""),
+  /** 省份与城市（Cloudflare 提供的英文名） */
+  place: text("place").notNull().default(""),
+  device: text("device").notNull().default(""),
+  browser: text("browser").notNull().default(""),
+}, (table) => [index("share_view_link_time_idx").on(table.linkId, table.viewedAt)]);

@@ -1,0 +1,8 @@
+# 存在本文件时 vinext 不再自动生成 _headers，其默认规则需在这里保留
+# 文件名带内容 hash 的构建产物
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# pdf.js 资源按版本号分目录（见 scripts/copy-pdf-worker.mjs）
+/pdfjs/*
+  Cache-Control: public, max-age=31536000, immutable

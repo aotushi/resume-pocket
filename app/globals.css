@@ -107,9 +107,10 @@
 .pdf-page { display: block; max-width: 100%; height: auto; background: #fff; box-shadow: 0 1px 2px rgb(24 40 60 / .08), 0 8px 24px rgb(24 40 60 / .08); }
 
 @media print {
-  @page { margin: 0; }
+  /* 默认纸张为 Letter 的设备上，按宽铺满会比纸高，多出的一截挤到下一张成了空白页；限高后按比例缩进一张纸内 */
+  @page { size: A4; margin: 0; }
   body { background: #fff; }
-  .pdf-page { width: 100% !important; max-width: none; box-shadow: none; break-after: page; }
+  .pdf-page { width: 100% !important; max-width: none; max-height: 100vh; object-fit: contain; box-shadow: none; break-inside: avoid; break-after: page; }
   .pdf-page:last-child { break-after: auto; }
 }
 

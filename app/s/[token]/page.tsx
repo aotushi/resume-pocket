@@ -4,7 +4,7 @@ import { ShareUnavailable } from "@/components/share/share-unavailable";
 import { ShareViewer } from "@/components/share/share-viewer";
 import { demoResume, demoShare } from "@/lib/demo-data";
 import { parseProfile } from "../../lib/share-policy";
-import { addShareView, resolveShare } from "../../lib/shares";
+import { resolveShare } from "../../lib/shares";
 
 // 分享页不进搜索引擎、不向外站泄露来源地址，社交卡片不带简历信息
 export const metadata: Metadata = {
@@ -25,8 +25,7 @@ export default async function SharePage({ params }: Props) {
   if (share.state === "inactive") return <ShareUnavailable state="inactive" />;
   if (share.state !== "active") notFound();
 
-  // 只统计页面打开次数；文件请求（预览、打印、下载）不计
-  await addShareView(share.link.id).catch((error) => console.error("Could not count share view", error));
+  // 访问次数由页面在浏览器中运行后上报（/api/s/[token]/view），链接卡片抓取等不执行脚本的请求不计
   const { link, resume } = share;
   return <ShareViewer token={token} share={{
     token: "",

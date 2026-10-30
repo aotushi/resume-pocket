@@ -18,8 +18,8 @@ export default async function TermsPage() {
     sections={[
       { title: "服务内容", body: <p>简历口袋帮助你在线保存 {USER_FORMATS} 简历，并通过链接分享给招聘方。平台不会代你投递或联系任何公司，链接由你自行发送。</p> },
       { title: "账户", body: <ul>
-        <li>请使用你本人可以访问的邮箱注册，并妥善保管密码。</li>
-        <li>目前暂不支持邮箱验证和密码找回，遗失密码可能导致无法继续访问已保存的简历。</li>
+        <li>请使用你本人可以访问的邮箱注册：登录和找回密码都通过发往该邮箱的验证码完成，邮箱不可用可能导致无法继续访问已保存的简历。</li>
+        <li>请勿把验证码告诉他人；设置了密码的，请妥善保管。</li>
       </ul> },
       { title: "你上传的内容", body: <ul>
         <li>目前支持 {USER_FORMATS_DETAIL} 格式（游客空间仅支持 {GUEST_FORMATS}），单个文件不超过 {MAX_SIZE_TEXT}。Word 简历会转换为 PDF 用于在线预览。</li>

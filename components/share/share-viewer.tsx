@@ -57,6 +57,12 @@ export function ShareViewer(props: Props) {
     }
   }, [token]);
 
+  // 页面真正在浏览器里打开后上报一次访问；链接卡片抓取不执行脚本，不会走到这里
+  useEffect(() => {
+    if (!token) return;
+    void fetch(`/api/s/${token}/view`, { method: "POST", keepalive: true }).catch(() => undefined);
+  }, [token]);
+
   useEffect(() => {
     if (!token) return;
     const timer = setInterval(() => { if (document.visibilityState === "visible") void check(); }, STATUS_INTERVAL_MS);

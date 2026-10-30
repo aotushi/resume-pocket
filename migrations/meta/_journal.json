@@ -15,6 +15,13 @@
       "when": 1793290619065,
       "tag": "0001_share_links",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793320072372,
+      "tag": "0002_share_views",
+      "breakpoints": true
     }
   ]
 }
