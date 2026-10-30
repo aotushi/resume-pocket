@@ -12,6 +12,8 @@ export type DemoShare = {
   note?: string;
   fileName: string;
   updatedAt: string;
+  /** 到期时间；永久有效或示例页为空 */
+  expiresAt?: string | null;
 };
 
 export const demoShare: DemoShare = {

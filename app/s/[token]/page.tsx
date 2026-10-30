@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { preload, preloadModule } from "react-dom";
 import { ShareUnavailable } from "@/components/share/share-unavailable";
 import { ShareViewer } from "@/components/share/share-viewer";
 import { demoResume, demoShare } from "@/lib/demo-data";
+import { PDF_WORKER_URL } from "@/lib/pdf-assets";
 import { parseProfile } from "../../lib/share-policy";
 import { resolveShare } from "../../lib/shares";
 
@@ -27,11 +29,15 @@ export default async function SharePage({ params }: Props) {
 
   // 访问次数由页面在浏览器中运行后上报（/api/s/[token]/view），链接卡片抓取等不执行脚本的请求不计
   const { link, resume } = share;
+  // 让浏览器收到 HTML 就开始下载简历文件和 pdf.js worker，不必等页面脚本运行
+  preload(`/api/s/${token}/file`, { as: "fetch", crossOrigin: "anonymous" });
+  preloadModule(PDF_WORKER_URL, { as: "worker" });
   return <ShareViewer token={token} share={{
     token: "",
     profile: parseProfile(link.profile),
     note: link.note || undefined,
     fileName: resume.name,
     updatedAt: resume.uploadedAt,
+    expiresAt: link.expiresAt?.toISOString() ?? null,
   }} />;
 }

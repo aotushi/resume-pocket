@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { PDF_ASSETS, PDF_WORKER_URL } from "@/lib/pdf-assets";
 
 type Props = { url: string; onReady: (ready: boolean) => void };
 type PreviewError = "password" | "invalid" | "other";
@@ -13,7 +14,18 @@ const ERROR_TEXT: Record<PreviewError, string> = {
   other: "当前浏览器暂时无法预览，可下载原文件，或换用系统浏览器打开",
 };
 
+// 首次渲染就开始下载 pdf.js，不等组件挂载；放在模块顶层会让路由预取也下载它
+let pdfjsReady: Promise<typeof import("pdfjs-dist/legacy/build/pdf.mjs")> | null = null;
+const loadPdfjs = () => (pdfjsReady ??= import("pdfjs-dist/legacy/build/pdf.mjs"));
+
+async function fetchPdf(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`File request failed: ${response.status}`);
+  return new Uint8Array(await response.arrayBuffer());
+}
+
 export function PdfPreview({ url, onReady }: Props) {
+  if (typeof window !== "undefined") void loadPdfjs();
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<PreviewError | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,17 +42,16 @@ export function PdfPreview({ url, onReady }: Props) {
 
     async function render() {
       try {
-        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-        // 资源目录按版本号区分（scripts/copy-pdf-worker.mjs），可长期缓存
-        const assets = `/pdfjs/${pdfjs.version}`;
-        pdfjs.GlobalWorkerOptions.workerSrc = `${assets}/pdf.worker.min.mjs`;
+        // 文件与 pdf.js 并行下载（分享页 HTML 里已预加载两者）
+        const [pdfjs, data] = await Promise.all([loadPdfjs(), fetchPdf(url)]);
+        if (cancelled) return;
+        pdfjs.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
         const loadingTask = pdfjs.getDocument({
-          url,
-          withCredentials: true,
-          cMapUrl: `${assets}/cmaps/`,
+          data,
+          cMapUrl: `${PDF_ASSETS}/cmaps/`,
           cMapPacked: true,
-          standardFontDataUrl: `${assets}/standard_fonts/`,
-          wasmUrl: `${assets}/wasm/`,
+          standardFontDataUrl: `${PDF_ASSETS}/standard_fonts/`,
+          wasmUrl: `${PDF_ASSETS}/wasm/`,
         });
         destroy = () => loadingTask.destroy();
         const pdf = await loadingTask.promise;

@@ -3,7 +3,7 @@
 /**
  * 接收方看到的简历分享页：优先阅读，其次打印/下载。
  * 公开信息卡与投递说明只在求职者填写时出现；示例页用虚构内容，并提供页数、缩放、适应宽度辅助阅读。
- * 真实分享渲染 PDF，并定期（及回到前台、网络恢复时）检查链接状态：停用或失效后立即移除简历内容。
+ * 真实分享渲染 PDF，并定期（及回到前台、网络恢复时）检查链接状态：停用或失效后立即移除简历内容；到期时刻本地直接移除，不等下一次检查。
  * 网络错误不当作失效，只等下一次检查。
  */
 import { useCallback, useEffect, useState } from "react";
@@ -22,6 +22,8 @@ const PAGES = [1, 2] as const;
 const ZOOM_STEPS = [0.6, 0.75, 0.9, 1, 1.15, 1.3, 1.5];
 
 const STATUS_INTERVAL_MS = 30_000;
+// setTimeout 的最大延迟（约 24.8 天），更远的到期时间交给定期检查
+const MAX_TIMEOUT_MS = 2_147_483_647;
 
 type Props =
   | { share: DemoShare; resume: ResumeContent; demo: true }
@@ -71,6 +73,14 @@ export function ShareViewer(props: Props) {
     window.addEventListener("online", onVisible);
     return () => { clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); window.removeEventListener("online", onVisible); };
   }, [token, check]);
+
+  useEffect(() => {
+    if (!share.expiresAt) return;
+    const delay = new Date(share.expiresAt).getTime() - Date.now();
+    if (delay > MAX_TIMEOUT_MS) return;
+    const timer = setTimeout(() => setGone("missing"), Math.max(0, delay));
+    return () => clearTimeout(timer);
+  }, [share.expiresAt]);
 
   if (gone) return <ShareUnavailable state={gone} />;
 

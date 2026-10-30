@@ -15,6 +15,8 @@ export function getAuth() {
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     emailAndPassword: { enabled: true, minPasswordLength: 10, maxPasswordLength: 128 },
+    // 会话签名缓存在 Cookie 里 5 分钟，期间读会话不查数据库；代价是其他设备退出登录最多晚 5 分钟生效
+    session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
     // The Worker applies a Cloudflare rate limit to the sign-in and sign-up routes.
     rateLimit: { enabled: false },
     // 验证码登录：新邮箱验证通过即自动注册；忘记密码也走验证码重置
