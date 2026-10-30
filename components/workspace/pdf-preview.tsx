@@ -24,6 +24,7 @@ export function PdfPreview({ url, onReady }: Props) {
   useEffect(() => {
     let cancelled = false;
     let destroy: (() => Promise<void>) | undefined;
+    const urls: string[] = [];
     const container = containerRef.current;
     if (!container) return;
     container.replaceChildren();
@@ -45,15 +46,27 @@ export function PdfPreview({ url, onReady }: Props) {
           // Keep the same print resolution on phones and desktop screens.
           const viewport = page.getViewport({ scale: (794 / base.width) * 2 });
           const canvas = document.createElement("canvas");
-          canvas.className = "pdf-page";
           canvas.width = Math.floor(viewport.width);
           canvas.height = Math.floor(viewport.height);
-          canvas.style.width = `${viewport.width / 2}px`;
-          canvas.setAttribute("aria-label", `简历第 ${number} 页`);
-          container.appendChild(canvas);
           const context = canvas.getContext("2d");
           if (!context) throw new Error("Canvas unavailable");
           await page.render({ canvas, canvasContext: context, viewport }).promise;
+          // 画完转成图片显示：手机浏览器切到后台会回收 canvas 像素且不重画，回到前台变空白；
+          // 图片按压缩数据保存，被回收后浏览器会自动重新解码
+          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+          canvas.width = canvas.height = 0;
+          if (!blob) throw new Error("Page export failed");
+          const src = URL.createObjectURL(blob);
+          urls.push(src);
+          if (cancelled) return;
+          const image = new Image();
+          image.className = "pdf-page";
+          image.src = src;
+          image.width = viewport.width / 2;
+          image.alt = `简历第 ${number} 页`;
+          await image.decode().catch(() => {});
+          if (cancelled) return;
+          container.appendChild(image);
         }
         if (!cancelled) { setLoading(false); onReady(true); }
       } catch (cause) {
@@ -61,7 +74,7 @@ export function PdfPreview({ url, onReady }: Props) {
       }
     }
     void render();
-    return () => { cancelled = true; void destroy?.(); };
+    return () => { cancelled = true; void destroy?.(); urls.forEach((src) => URL.revokeObjectURL(src)); };
   }, [url, onReady]);
 
   return <>
