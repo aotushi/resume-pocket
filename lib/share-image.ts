@@ -21,6 +21,14 @@ const MAX_HEIGHT = 32_000;
 const NOTE_LINES = 2;
 const BRAND = "简历口袋";
 const BRAND_HOST = "jianli.9shi.cc";
+const LOGO_SIZE = 20;
+const LOGO_PATHS = [
+  "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z",
+  "M14 2v5a1 1 0 0 0 1 1h5",
+  "M10 9H8",
+  "M16 13H8",
+  "M16 17H8",
+];
 const FONT = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif';
 
 type Options = { fileUrl: string; shareUrl: string; expiresAt: string | null; profile: ShareProfile; note: string };
@@ -110,8 +118,9 @@ function drawHeader(context: CanvasRenderingContext2D, header: Header, top: numb
   context.fillStyle = "#94a3b8";
   context.textAlign = "right";
   context.fillText(`${BRAND} · ${BRAND_HOST}`, left + PAGE_WIDTH - CARD_PADDING, y);
-  const brandWidth = context.measureText(`${BRAND} · ${BRAND_HOST}`).width;
+  const brandWidth = context.measureText(`${BRAND} · ${BRAND_HOST}`).width + 6 + LOGO_SIZE;
   context.textAlign = "left";
+  drawLogo(context, left + PAGE_WIDTH - CARD_PADDING - brandWidth, y - 5 - LOGO_SIZE / 2);
   context.font = `600 24px ${FONT}`;
   context.fillStyle = "#0f172a";
   context.fillText(fitText(context, header.title, PAGE_WIDTH - CARD_PADDING * 2 - brandWidth - 24), left + CARD_PADDING, y);
@@ -128,6 +137,23 @@ function drawHeader(context: CanvasRenderingContext2D, header: Header, top: numb
     context.fillStyle = "#334155";
     for (const line of header.note) { y += 24; context.fillText(line, left + CARD_PADDING, y); }
   }
+}
+
+/** 与站点导航栏一致的标志：主色圆角方块 + 白色 lucide FileText 图标（24 单位网格） */
+function drawLogo(context: CanvasRenderingContext2D, x: number, y: number) {
+  context.save();
+  context.fillStyle = "#234f86";
+  roundRect(context, x, y, LOGO_SIZE, LOGO_SIZE, 5);
+  context.fill();
+  const icon = 13;
+  context.translate(x + (LOGO_SIZE - icon) / 2, y + (LOGO_SIZE - icon) / 2);
+  context.scale(icon / 24, icon / 24);
+  context.strokeStyle = "#fff";
+  context.lineWidth = 2;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  for (const d of LOGO_PATHS) context.stroke(new Path2D(d));
+  context.restore();
 }
 
 async function drawFooter(context: CanvasRenderingContext2D, { top, width, scale, shareUrl, expiresAt }: { top: number; width: number; scale: number; shareUrl: string; expiresAt: string | null }) {
