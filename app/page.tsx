@@ -104,7 +104,7 @@ export default async function Home() {
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">上传 {USER_FORMATS} 简历，为不同公司或联系人创建独立链接，并选择有效期。招聘方无需注册，打开即可查看、打印和下载。</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               {signedIn
-                ? <Button asChild size="lg" className="h-12 px-7 text-[15px]"><a href="/app">进入工作区<ArrowRight /></a></Button>
+                ? <Button asChild size="lg" className="h-12 px-7 text-[15px]"><Link href="/app">进入工作区<ArrowRight /></Link></Button>
                 : <AuthButton mode="signup" size="lg" className="h-12 px-7 text-[15px]">免费开始使用<ArrowRight /></AuthButton>}
               <Button asChild variant="outline" size="lg" className="h-12 bg-card px-7 text-[15px]">
                 {signedIn ? <Link href="/s/demo">查看示例分享页</Link> : <Link href="/try">无需注册，直接上传</Link>}
@@ -286,7 +286,7 @@ export default async function Home() {
               <p className="mt-3 text-primary-foreground/80">上传一份简历，几分钟内就能发出第一条链接</p>
             </div>
             {signedIn
-              ? <Button asChild size="lg" variant="secondary" className="h-12 px-7 text-[15px]"><a href="/app">进入工作区<ArrowRight /></a></Button>
+              ? <Button asChild size="lg" variant="secondary" className="h-12 px-7 text-[15px]"><Link href="/app">进入工作区<ArrowRight /></Link></Button>
               : <AuthButton mode="signup" size="lg" variant="secondary" className="h-12 px-7 text-[15px]">免费开始使用<ArrowRight /></AuthButton>}
           </div>
         </div>

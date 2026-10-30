@@ -32,10 +32,10 @@ export function AppHeader({ user, admin }: Props) {
     <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
       <Brand href="/app" />
       <nav aria-label="工作区导航" className="flex items-center gap-1">
-        {links.map((link) => <a key={link.href} href={link.href} aria-current={link.active ? "page" : undefined}
+        {links.map((link) => <Link key={link.href} href={link.href} aria-current={link.active ? "page" : undefined}
           className={cn("flex h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors", link.active ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
           <link.icon className="size-4" /><span className="hidden sm:inline">{link.label}</span>
-        </a>)}
+        </Link>)}
       </nav>
 
       <DropdownMenu>
@@ -49,7 +49,7 @@ export function AppHeader({ user, admin }: Props) {
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild><a href="/app/settings"><Settings />账户设置</a></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link href="/app/settings"><Settings />账户设置</Link></DropdownMenuItem>
           <DropdownMenuItem asChild><Link href="/"><FileText />产品首页</Link></DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => void signOut()}><LogOut />退出登录</DropdownMenuItem>
