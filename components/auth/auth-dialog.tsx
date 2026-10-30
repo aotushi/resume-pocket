@@ -6,6 +6,7 @@
  * 访问 /app 未登录时会被重定向到 /?auth=signin&next=/app，这里读取参数自动弹出，成功后回到 next。
  */
 import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -206,7 +207,7 @@ function AuthForm({ mode, next }: { mode: Mode; next: string }) {
       </p>
 
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
-        继续即表示你同意<a className="text-primary underline-offset-4 hover:underline" href="/terms">服务说明</a>和<a className="text-primary underline-offset-4 hover:underline" href="/privacy">隐私说明</a>
+        继续即表示你同意<Link className="text-primary underline-offset-4 hover:underline" href="/terms">服务说明</Link>和<Link className="text-primary underline-offset-4 hover:underline" href="/privacy">隐私说明</Link>
       </p>
     </div>
   </form>;

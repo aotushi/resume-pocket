@@ -6,9 +6,9 @@ import { SiteHeader } from "./site-header";
 type Section = { title: string; body: ReactNode };
 
 /** 隐私说明、服务说明共用的长文版式：左侧目录（大屏）+ 正文 */
-export function LegalPage({ title, intro, updatedAt, sections, signedIn }: { title: string; intro: string; updatedAt: string; sections: Section[]; signedIn: boolean }) {
+export function LegalPage({ title, intro, updatedAt, sections }: { title: string; intro: string; updatedAt: string; sections: Section[] }) {
   return <AuthDialogProvider>
-    <SiteHeader signedIn={signedIn} />
+    <SiteHeader />
     <main id="main" className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
       <header className="max-w-3xl">
         <h1 className="text-[28px] leading-tight font-bold tracking-tight text-balance sm:text-4xl">{title}</h1>

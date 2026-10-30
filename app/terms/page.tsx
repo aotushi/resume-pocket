@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/site/legal-page";
-import { getCurrentUser } from "../lib/auth";
 import { GUEST_FORMATS, MAX_SIZE_TEXT, USER_FORMATS, USER_FORMATS_DETAIL } from "../lib/format-copy";
 
+// 页面不读取登录状态（顶栏按钮在浏览器里判断），整页静态，可提前加载并缓存
+export const dynamic = "force-static";
+
 export const metadata: Metadata = { title: "服务说明 | 简历口袋" };
-export const dynamic = "force-dynamic";
 
 const ISSUES = "https://github.com/aotushi/resume-pocket/issues";
 
-export default async function TermsPage() {
-  const signedIn = Boolean(await getCurrentUser());
+export default function TermsPage() {
   return <LegalPage
-    signedIn={signedIn}
     title="服务说明"
     intro="使用简历口袋即表示你了解并同意以下约定。我们尽量保持简短，只写与你相关的规则。"
     updatedAt="2026 年 10 月"

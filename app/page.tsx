@@ -4,14 +4,16 @@ import { HeroPreview } from "@/components/site/hero-preview";
 import { LinkStateDemo } from "@/components/site/link-state-demo";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { SignedInSwitch } from "@/components/site/signed-in";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getCurrentUser } from "./lib/auth";
 import { GUEST_FORMATS, MAX_SIZE_TEXT, USER_FORMATS, USER_FORMATS_DETAIL, USER_FORMATS_LIST } from "./lib/format-copy";
 import Link from "next/link";
 
-export const dynamic = "force-dynamic";
+// 页面不读取登录状态（顶栏按钮在浏览器里判断），整页静态，可提前加载并缓存
+export const dynamic = "force-static";
+
 
 // 首页统一的版式尺度（8pt 网格，内距 < 外距）：区块已有分隔线与交替底色，留白不必再加大
 const container = "mx-auto max-w-6xl px-5 sm:px-8";
@@ -84,13 +86,10 @@ const faqs = [
   { q: "忘记密码可以找回吗？", a: "可以。登录时直接用邮箱验证码即可进入，无需密码；想重新设置密码，在登录窗口选「用密码登录」→「忘记密码？」，用验证码设置新密码。" },
 ];
 
-export default async function Home() {
-  const user = await getCurrentUser();
-  const signedIn = Boolean(user);
-
+export default function Home() {
   return <AuthDialogProvider>
     <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-card focus:px-4 focus:py-2 focus:shadow">跳到正文</a>
-    <SiteHeader signedIn={signedIn} />
+    <SiteHeader />
 
     {/* landing：区块分隔线与交替底色见 globals.css */}
     <main id="main" className="landing">
@@ -103,14 +102,14 @@ export default async function Home() {
             <h1 className="mt-6 text-[34px] leading-[1.25] font-bold tracking-tight text-balance sm:text-5xl sm:leading-[1.2]">把简历放在线上，<br />随时分享给招聘方</h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">上传 {USER_FORMATS} 简历，为不同公司或联系人创建独立链接，并选择有效期。招聘方无需注册，打开即可查看、打印和下载。</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              {signedIn
-                ? <Button asChild size="lg" className="h-12 px-7 text-[15px]"><Link href="/app">进入工作区<ArrowRight /></Link></Button>
-                : <AuthButton mode="signup" size="lg" className="h-12 px-7 text-[15px]">免费开始使用<ArrowRight /></AuthButton>}
-              <Button asChild variant="outline" size="lg" className="h-12 bg-card px-7 text-[15px]">
-                {signedIn ? <Link href="/s/demo">查看示例分享页</Link> : <Link href="/try">无需注册，直接上传</Link>}
-              </Button>
+              <SignedInSwitch
+                signedIn={<Button asChild size="lg" className="h-12 px-7 text-[15px]"><Link href="/app">进入工作区<ArrowRight /></Link></Button>}
+                signedOut={<AuthButton mode="signup" size="lg" className="h-12 px-7 text-[15px]">免费开始使用<ArrowRight /></AuthButton>} />
+              <SignedInSwitch
+                signedIn={<Button asChild variant="outline" size="lg" className="h-12 bg-card px-7 text-[15px]"><Link href="/s/demo">查看示例分享页</Link></Button>}
+                signedOut={<Button asChild variant="outline" size="lg" className="h-12 bg-card px-7 text-[15px]"><Link href="/try">无需注册，直接上传</Link></Button>} />
             </div>
-            {!signedIn && <p className="mt-4 text-sm text-muted-foreground">先看看效果？<Link href="/s/demo" className="font-medium text-primary hover:underline">打开示例分享页</Link></p>}
+            <SignedInSwitch signedOut={<p className="mt-4 text-sm text-muted-foreground">先看看效果？<Link href="/s/demo" className="font-medium text-primary hover:underline">打开示例分享页</Link></p>} />
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-1.5"><UserX className="size-4 text-primary" />对方无需注册</li>
               <li className="flex items-center gap-1.5"><Power className="size-4 text-primary" />链接可随时停用</li>
@@ -214,7 +213,7 @@ export default async function Home() {
       </section>
 
       {/* 免注册使用：两张方案卡逐行对齐，代替原来的三列表格 */}
-      {!signedIn && <section id="guest" className={sectionY}>
+      <SignedInSwitch signedOut={<section id="guest" className={sectionY}>
         <div className={container}>
           <SectionHeading eyebrow="免注册使用" title="急着投一份？不注册也行" text="上传、预览、创建有期限的链接、随时停用，这些都不需要账号。游客空间有数量和时间限制，需要长期使用时再注册。" />
           <div className={cn(contentTop, cardGrid, "mx-auto max-w-4xl md:grid-cols-2")}>
@@ -245,7 +244,7 @@ export default async function Home() {
           </div>
           <p className="mt-4 text-center text-sm text-muted-foreground">游客没有账号，请保存好上传后显示的管理链接</p>
         </div>
-      </section>}
+      </section>} />
 
       {/* 规划中：未上线功能明确标注，不当作现有能力宣传 */}
       <section id="roadmap" className={sectionY}>
@@ -285,9 +284,9 @@ export default async function Home() {
               <h2 className="text-2xl font-bold sm:text-3xl">准备好下一次投递了吗？</h2>
               <p className="mt-3 text-primary-foreground/80">上传一份简历，几分钟内就能发出第一条链接</p>
             </div>
-            {signedIn
-              ? <Button asChild size="lg" variant="secondary" className="h-12 px-7 text-[15px]"><Link href="/app">进入工作区<ArrowRight /></Link></Button>
-              : <AuthButton mode="signup" size="lg" variant="secondary" className="h-12 px-7 text-[15px]">免费开始使用<ArrowRight /></AuthButton>}
+            <SignedInSwitch
+              signedIn={<Button asChild size="lg" variant="secondary" className="h-12 px-7 text-[15px]"><Link href="/app">进入工作区<ArrowRight /></Link></Button>}
+              signedOut={<AuthButton mode="signup" size="lg" variant="secondary" className="h-12 px-7 text-[15px]">免费开始使用<ArrowRight /></AuthButton>} />
           </div>
         </div>
       </section>

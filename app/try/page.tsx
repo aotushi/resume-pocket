@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 export default async function TryPage() {
   if (await getCurrentUser()) redirect("/app");
   return <AuthDialogProvider>
-    <SiteHeader signedIn={false} />
+    <SiteHeader />
     <main id="main" className="mx-auto min-h-[calc(100vh-4rem)] max-w-6xl px-5 py-8 sm:px-8 lg:py-10 print:max-w-none print:p-0">
       <GuestSpace />
     </main>

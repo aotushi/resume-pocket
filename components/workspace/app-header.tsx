@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { FileText, LogOut, Settings, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Brand } from "@/components/site/brand";
+import { setSignedIn } from "@/components/site/signed-in";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,7 @@ export async function signOut() {
   try {
     const response = await fetch("/api/auth/sign-out", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     if (!response.ok) throw new Error();
+    setSignedIn(false);
     window.location.href = "/";
   } catch {
     toast.error("退出失败，请重试");

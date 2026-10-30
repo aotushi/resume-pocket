@@ -147,7 +147,7 @@ export function ShareViewer(props: Props) {
     <footer className="border-t bg-card print:hidden">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-4 py-5 text-xs text-muted-foreground sm:flex-row sm:justify-between sm:px-6">
         <p>此简历由分享者提供，内容由其本人负责</p>
-        <nav className="flex gap-4"><a className="hover:text-foreground" href="/privacy">隐私说明</a><Link className="hover:text-foreground" href="/">简历口袋首页</Link></nav>
+        <nav className="flex gap-4"><Link className="hover:text-foreground" href="/privacy">隐私说明</Link><Link className="hover:text-foreground" href="/">简历口袋首页</Link></nav>
       </div>
     </footer>
   </div>;

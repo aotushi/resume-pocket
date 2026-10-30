@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/site/legal-page";
-import { getCurrentUser } from "../lib/auth";
 import { USER_FORMATS } from "../lib/format-copy";
 
+// 页面不读取登录状态（顶栏按钮在浏览器里判断），整页静态，可提前加载并缓存
+export const dynamic = "force-static";
+
 export const metadata: Metadata = { title: "隐私说明 | 简历口袋" };
-export const dynamic = "force-dynamic";
 
 const ISSUES = "https://github.com/aotushi/resume-pocket/issues";
 
-export default async function PrivacyPage() {
-  const signedIn = Boolean(await getCurrentUser());
+export default function PrivacyPage() {
   return <LegalPage
-    signedIn={signedIn}
     title="隐私说明"
     intro="简历包含大量个人信息。这里用直白的话说明我们保存什么、谁能看到，以及你如何停止分享。"
     updatedAt="2026 年 10 月"
