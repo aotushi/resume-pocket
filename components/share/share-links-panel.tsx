@@ -69,7 +69,7 @@ export function ShareLinksPanel({ resume, guest = false }: { resume: Resume; gue
   const load = useCallback(() => {
     fetch(`/api/shares?resume=${resume.id}`, { cache: "no-store" })
       .then(async (response) => {
-        if (!response.ok) throw new Error(await errorOf(response, "暂时无法读取分享链接。"));
+        if (!response.ok) throw new Error(await errorOf(response, "暂时无法读取分享链接"));
         const data = await response.json() as { links: ShareLinkView[] };
         setLinks(data.links);
         setNow(Date.now());
@@ -94,7 +94,7 @@ export function ShareLinksPanel({ resume, guest = false }: { resume: Resume; gue
     if (expiry.kind === "days") choice = { days: expiry.days };
     else if (expiry.kind === "permanent") choice = { permanent: true };
     else {
-      if (!until) { toast.error("请选择截止日期。"); return; }
+      if (!until) { toast.error("请选择截止日期"); return; }
       // 自定义日期截止到当天结束（本地时间）
       choice = { until: new Date(`${until}T23:59:59`).toISOString() };
     }
@@ -105,14 +105,14 @@ export function ShareLinksPanel({ resume, guest = false }: { resume: Resume; gue
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resumeId: resume.id, target, note, profile, expiry: choice }),
       });
-      if (!response.ok) throw new Error(await errorOf(response, "创建失败，请稍后重试。"));
+      if (!response.ok) throw new Error(await errorOf(response, "创建失败，请稍后重试"));
       const { link } = await response.json() as { link: ShareLinkView };
       setLinks((current) => [link, ...current]);
       setNow(Date.now());
       setTarget(""); setNote(""); setExpiry({ kind: "days", days: 1 }); setUntil("");
-      toast.success("链接已创建", { description: "点「分享」或「复制链接」发给对方即可。" });
+      toast.success("链接已创建", { description: "点「分享」或「复制链接」发给对方即可" });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "创建失败，请稍后重试。");
+      toast.error(error instanceof Error ? error.message : "创建失败，请稍后重试");
     } finally {
       setCreating(false);
     }
@@ -122,12 +122,12 @@ export function ShareLinksPanel({ resume, guest = false }: { resume: Resume; gue
     setBusyId(link.id);
     try {
       const response = await fetch(`/api/shares/${link.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active }) });
-      if (!response.ok) throw new Error(await errorOf(response, "操作失败，请稍后重试。"));
+      if (!response.ok) throw new Error(await errorOf(response, "操作失败，请稍后重试"));
       const { link: updated } = await response.json() as { link: ShareLinkView };
       setLinks((current) => current.map((item) => item.id === updated.id ? updated : item));
-      toast.success(active ? "链接已重新启用，有效期不变。" : "链接已停用，对方将无法再打开。");
+      toast.success(active ? "链接已重新启用，有效期不变" : "链接已停用，对方将无法再打开");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "操作失败，请稍后重试。");
+      toast.error(error instanceof Error ? error.message : "操作失败，请稍后重试");
     } finally {
       setBusyId(null);
     }
@@ -137,11 +137,11 @@ export function ShareLinksPanel({ resume, guest = false }: { resume: Resume; gue
     setBusyId(link.id);
     try {
       const response = await fetch(`/api/shares/${link.id}`, { method: "DELETE" });
-      if (!response.ok && response.status !== 404) throw new Error(await errorOf(response, "删除失败，请稍后重试。"));
+      if (!response.ok && response.status !== 404) throw new Error(await errorOf(response, "删除失败，请稍后重试"));
       setLinks((current) => current.filter((item) => item.id !== link.id));
-      toast.success("链接已删除。");
+      toast.success("链接已删除");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "删除失败，请稍后重试。");
+      toast.error(error instanceof Error ? error.message : "删除失败，请稍后重试");
     } finally {
       setBusyId(null);
     }
@@ -177,9 +177,9 @@ export function ShareLinksPanel({ resume, guest = false }: { resume: Resume; gue
           {expiry.kind === "until" && <Input type="date" aria-label="截止日期" className="mt-1" value={until} onChange={(event) => setUntil(event.target.value)}
             min={localDate(now)} max={localDate(now + (USER_MAX_CUSTOM_DAYS - 1) * DAY_MS)} />}
           <p className="text-xs text-muted-foreground">{guest
-            ? capped ? "你的简历会更早自动删除，链接将在那时一起失效。" : "自定义日期和永久有效需注册后使用。"
-            : expiry.kind === "permanent" ? "永久有效的链接不会自动到期，不再需要时请手动停用。"
-              : expiry.kind === "until" ? "链接在所选日期当天结束时到期。" : "到期后对方将无法再打开。"}</p>
+            ? capped ? "你的简历会更早自动删除，链接将在那时一起失效" : "自定义日期和永久有效需注册后使用"
+            : expiry.kind === "permanent" ? "永久有效的链接不会自动到期，不再需要时请手动停用"
+              : expiry.kind === "until" ? "链接在所选日期当天结束时到期" : "到期后对方将无法再打开"}</p>
         </fieldset>
         <div className="grid gap-1.5">
           <Label htmlFor="share-note">投递留言 <span className="font-normal text-muted-foreground">（可选，对方可见）</span></Label>
@@ -190,7 +190,7 @@ export function ShareLinksPanel({ resume, guest = false }: { resume: Resume; gue
             <span>公开信息卡 <span className="font-normal text-muted-foreground">（可选，对方可见）</span></span>
             <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
           </summary>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">显示在分享页顶部，只填你想让这家公司看到的项目。不会自动使用账户或简历里的资料。</p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">显示在分享页顶部，只填你想让这家公司看到的项目，不会自动使用账户或简历里的资料</p>
           <div className="mt-3 grid gap-3 pb-1">
             {PROFILE_FIELDS.map((field) => <div key={field} className="grid gap-1">
               <Label htmlFor={`share-profile-${field}`} className="text-xs">{profileLabels[field].label}</Label>
@@ -263,7 +263,7 @@ function LinkRow({ link, now, busy, onDisable, onEnable, onDelete }: RowProps) {
       return;
     }
     await navigator.clipboard.writeText(message);
-    toast.success("文字和链接已复制", { description: "粘贴到聊天或邮件里发给对方即可。" });
+    toast.success("文字和链接已复制", { description: "粘贴到聊天或邮件里发给对方即可" });
   }
 
   async function copy() {
@@ -299,7 +299,7 @@ function LinkRow({ link, now, busy, onDisable, onEnable, onDelete }: RowProps) {
       </div>
     </div>
     {link.note && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">留言：{link.note}</p>}
-    {!url && <p className="mt-2 text-xs text-warning">这条链接的地址无法再次显示，如需继续分享请新建一条。</p>}
+    {!url && <p className="mt-2 text-xs text-warning">这条链接的地址无法再次显示，如需继续分享请新建一条</p>}
     {usable && url && <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
       <Button size="sm" onClick={() => void share()}><Share />分享</Button>
       <Button size="sm" variant="outline" onClick={() => void copy()}>{copied ? <Check /> : <Copy />}复制链接</Button>

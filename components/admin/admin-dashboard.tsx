@@ -33,7 +33,7 @@ const chartConfig = {
 
 export function AdminDashboard() {
   return <div>
-    <PageHeader title="管理后台" description="查看全站使用情况，管理注册用户。"
+    <PageHeader title="管理后台" description="查看全站使用情况，管理注册用户"
       badge={<Badge variant="outline" className="border-warning/40 bg-warning/10 font-normal text-warning">示例数据</Badge>}
       actions={<p className="text-xs text-muted-foreground">更新于 {dateTime(adminSummary.updatedAt)}</p>} />
 
@@ -73,7 +73,7 @@ function Overview() {
       <Card>
         <CardHeader>
           <CardTitle>近 7 天访问</CardTitle>
-          <CardDescription>首页与分享页分别计数；PDF 分页请求、下载和状态检查不计入。</CardDescription>
+          <CardDescription>首页与分享页分别计数；PDF 分页请求、下载和状态检查不计入</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[260px] w-full">
@@ -107,7 +107,7 @@ function Overview() {
               <span className="w-12 text-right text-xs text-muted-foreground tabular-nums">{Math.round((item.value / shares.total) * 100)}%</span>
             </li>)}
           </ul>
-          <p className="border-t pt-4 text-xs leading-relaxed text-muted-foreground">访问次数不等于阅读人数，刷新和链接预览工具可能产生重复计数，数据可能有延迟。</p>
+          <p className="border-t pt-4 text-xs leading-relaxed text-muted-foreground">访问次数不等于阅读人数，刷新和链接预览工具可能产生重复计数，数据可能有延迟</p>
         </CardContent>
       </Card>
     </div>
@@ -143,7 +143,7 @@ function UserTable() {
   function toggle(user: AdminUser) {
     const status = user.status === "active" ? "suspended" : "active";
     setUsers((current) => current.map((item) => item.id === user.id ? { ...item, status } : item));
-    toast.success(status === "suspended" ? `已停用 ${user.name}` : `已恢复 ${user.name}`, { description: "示例数据，未实际生效。" });
+    toast.success(status === "suspended" ? `已停用 ${user.name}` : `已恢复 ${user.name}`, { description: "示例数据，未实际生效" });
   }
 
   return <Card className="gap-0 py-0">

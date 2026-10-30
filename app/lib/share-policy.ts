@@ -91,19 +91,19 @@ export function resolveExpiry(choice: unknown, kind: OwnerKind, now: Date, delet
   let expiresAt: Date | null;
   if (value && typeof value.days === "number") {
     const allowed: readonly number[] = kind === "guest" ? GUEST_LINK_DAYS : LINK_DAYS;
-    if (!allowed.includes(value.days)) return "请选择有效期。";
+    if (!allowed.includes(value.days)) return "请选择有效期";
     expiresAt = new Date(now.getTime() + value.days * DAY_MS);
   } else if (value && value.permanent === true) {
-    if (kind === "guest") return "游客链接最长 7 天，注册后可设为永久有效。";
+    if (kind === "guest") return "游客链接最长 7 天，注册后可设为永久有效";
     expiresAt = null;
   } else if (value && typeof value.until === "string") {
-    if (kind === "guest") return "游客链接最长 7 天，注册后可自定义日期。";
+    if (kind === "guest") return "游客链接最长 7 天，注册后可自定义日期";
     const until = new Date(value.until);
-    if (Number.isNaN(until.getTime()) || until.getTime() <= now.getTime()) return "截止时间需晚于现在。";
-    if (until.getTime() > now.getTime() + USER_MAX_CUSTOM_DAYS * DAY_MS) return `自定义有效期最长 ${USER_MAX_CUSTOM_DAYS} 天，更久请选永久有效。`;
+    if (Number.isNaN(until.getTime()) || until.getTime() <= now.getTime()) return "截止时间需晚于现在";
+    if (until.getTime() > now.getTime() + USER_MAX_CUSTOM_DAYS * DAY_MS) return `自定义有效期最长 ${USER_MAX_CUSTOM_DAYS} 天，更久请选永久有效`;
     expiresAt = until;
   } else {
-    return "请选择有效期。";
+    return "请选择有效期";
   }
   if (deleteAt && (expiresAt === null || expiresAt.getTime() > deleteAt.getTime())) expiresAt = deleteAt;
   return expiresAt;

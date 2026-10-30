@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/site/legal-page";
 import { getCurrentUser } from "../lib/auth";
+import { USER_FORMATS } from "../lib/format-copy";
 
 export const metadata: Metadata = { title: "隐私说明 | 简历口袋" };
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export default async function PrivacyPage() {
     sections={[
       { title: "我们保存什么", body: <ul>
         <li><strong>账户信息</strong>：注册邮箱、昵称，以及经过加密处理的密码（我们无法看到明文）。</li>
-        <li><strong>简历文件</strong>：你上传的 PDF 原文件，以及文件名、大小、上传时间等基本信息。</li>
+        <li><strong>简历文件</strong>：你上传的 {USER_FORMATS} 原文件、Word 转换生成的 PDF 预览版本，以及文件名、大小、上传时间等基本信息。</li>
         <li><strong>登录状态</strong>：用于保持登录的会话 Cookie，不用于广告或跨站追踪。</li>
       </ul> },
       { title: "谁能看到你的简历", body: <>

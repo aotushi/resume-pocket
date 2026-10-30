@@ -81,7 +81,7 @@ export async function resumeFileResponse(prefix: string, resume: Resume, downloa
   const bucket = getBucket();
   const wantOriginal = download !== null && download !== "pdf" && resume.source !== "pdf";
   const file = await bucket.get(`${prefix}${resume.id}.${wantOriginal ? resume.source : "pdf"}`);
-  if (!file) return Response.json({ error: "未找到这份简历的文件。" }, { status: 404 });
+  if (!file) return Response.json({ error: "未找到这份简历的文件" }, { status: 404 });
   const ext = wantOriginal ? resume.source : "pdf";
   const name = resume.name.replace(/\.(pdf|docx|doc)$/i, "") + `.${ext}`;
   const encodedName = encodeURIComponent(name).replace(/['()*]/g, (character) =>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/site/legal-page";
 import { getCurrentUser } from "../lib/auth";
+import { GUEST_FORMATS, MAX_SIZE_TEXT, USER_FORMATS, USER_FORMATS_DETAIL } from "../lib/format-copy";
 
 export const metadata: Metadata = { title: "服务说明 | 简历口袋" };
 export const dynamic = "force-dynamic";
@@ -15,13 +16,13 @@ export default async function TermsPage() {
     intro="使用简历口袋即表示你了解并同意以下约定。我们尽量保持简短，只写与你相关的规则。"
     updatedAt="2026 年 10 月"
     sections={[
-      { title: "服务内容", body: <p>简历口袋帮助你在线保存 PDF 简历，并通过链接分享给招聘方。平台不会代你投递或联系任何公司，链接由你自行发送。</p> },
+      { title: "服务内容", body: <p>简历口袋帮助你在线保存 {USER_FORMATS} 简历，并通过链接分享给招聘方。平台不会代你投递或联系任何公司，链接由你自行发送。</p> },
       { title: "账户", body: <ul>
         <li>请使用你本人可以访问的邮箱注册，并妥善保管密码。</li>
         <li>目前暂不支持邮箱验证和密码找回，遗失密码可能导致无法继续访问已保存的简历。</li>
       </ul> },
       { title: "你上传的内容", body: <ul>
-        <li>目前支持 PDF 格式，单个文件不超过 10 MB。</li>
+        <li>目前支持 {USER_FORMATS_DETAIL} 格式（游客空间仅支持 {GUEST_FORMATS}），单个文件不超过 {MAX_SIZE_TEXT}。Word 简历会转换为 PDF 用于在线预览。</li>
         <li>请只上传你有权使用、内容真实的简历，不得上传违法、侵权或含恶意代码的文件。</li>
         <li>简历内容的版权与责任归你本人所有，我们只为提供服务而保存和展示它。</li>
       </ul> },

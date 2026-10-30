@@ -5,7 +5,7 @@ export function SiteFooter() {
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-10 sm:px-8 md:flex-row md:items-center md:justify-between">
       <div className="space-y-2">
         <Brand />
-        <p className="text-sm text-muted-foreground">简历放网上，发个链接就能投。</p>
+        <p className="text-sm text-muted-foreground">简历放网上，发个链接就能投</p>
       </div>
       <nav aria-label="页脚导航" className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
         <a className="hover:text-foreground" href="/privacy">隐私说明</a>

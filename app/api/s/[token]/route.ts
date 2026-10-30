@@ -13,6 +13,6 @@ export async function GET(_request: Request, { params }: Context) {
     return Response.json({ state: share.state }, { headers });
   } catch (error) {
     console.error("Could not check share link", error);
-    return Response.json({ error: "暂时无法检查链接状态。" }, { status: 503, headers });
+    return Response.json({ error: "暂时无法检查链接状态" }, { status: 503, headers });
   }
 }

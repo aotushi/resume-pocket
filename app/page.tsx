@@ -8,6 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "./lib/auth";
+import { GUEST_FORMATS, MAX_SIZE_TEXT, USER_FORMATS, USER_FORMATS_DETAIL, USER_FORMATS_LIST } from "./lib/format-copy";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ const card = "landing-surface rounded-xl border p-5";
 const cardGrid = "grid gap-4";
 
 const steps = [
-  { icon: FileUp, title: "上传简历", text: "把准备好的 PDF 或 Word 简历放进自己的空间，随时预览、打印与下载。" },
+  { icon: FileUp, title: "上传简历", text: `把准备好的 ${USER_FORMATS} 简历放进自己的空间，随时预览、打印与下载。` },
   { icon: Link2, title: "创建链接", text: "为每家公司或联系人单独创建链接，选择 1 天、7 天、自定义或永久有效。" },
   { icon: Send, title: "发给对方", text: "复制链接，通过你习惯的方式发送。对方无需注册，打开即可查看。" },
 ];
@@ -56,29 +57,29 @@ const comparison: { label: string; values: [Mark, Mark, Mark, Mark] }[] = [
 const plans = [
   {
     key: "guest", icon: Zap, title: "游客", subtitle: "不用账号，打开就能用",
-    rows: ["PDF", "1 份，14 天后自动删除", "1 天、2 天、7 天", "最多 3 条", "支持", "每条链接的访问次数", "凭管理链接"],
+    rows: [GUEST_FORMATS, "1 份，14 天后自动删除", "1 天、2 天、7 天", "最多 3 条", "支持", "每条链接的访问次数", "凭管理链接"],
   },
   {
     key: "member", icon: UserRoundCheck, title: "注册用户", subtitle: "免费注册，长期使用",
-    rows: ["PDF、Word", "多份，长期保存", "另可自定义日期或永久", "更多", "支持", "完整的数据统计", "登录即可"],
+    rows: [USER_FORMATS_LIST, "多份，长期保存", "另可自定义日期或永久", "更多", "支持", "完整的数据统计", "登录即可"],
   },
 ] as const;
 const planLabels = ["文件格式", "保存简历", "链接有效期", "同时有效的链接", "投递留言与随时停用", "访问统计", "换设备管理"];
 
 const roadmap = [
-  { icon: Images, title: "更多文档与图片格式", text: "在 PDF 和 Word 之外，陆续支持更多文档格式及 JPG、PNG 等图片简历，同样可以在线预览、打印和下载。" },
+  { icon: Images, title: "更多文档与图片格式", text: `在 ${USER_FORMATS_LIST} 之外，陆续支持更多文档格式及 JPG、PNG 等图片简历，同样可以在线预览、打印和下载。` },
   { icon: PenLine, title: "在线制作简历", text: "在网站上直接编辑内容、选择模板并导出 PDF，范围仍在讨论中。" },
 ];
 
 const faqs = [
-  { q: "支持什么文件？", a: "支持 PDF 和 Word（DOCX、DOC），单个文件不超过 10 MB。PDF 按原排版呈现；Word 会转换后在线预览，字体或分页可能与原文件略有差异，分享前请先检查预览，下载时提供原文件。后续还会支持更多文档与图片格式。" },
+  { q: "支持什么文件？", a: `支持 ${USER_FORMATS_DETAIL}，单个文件不超过 ${MAX_SIZE_TEXT}。PDF 按原排版呈现；Word 会转换后在线预览，字体或分页可能与原文件略有差异，分享前请先检查预览，下载时提供原文件。后续还会支持更多文档与图片格式。` },
   { q: "对方需要注册账号吗？", a: "不需要。持有有效链接的人可以直接在浏览器中查看简历，默认可以打印和下载。" },
   { q: "链接会失效吗？", a: "创建时可选择 1 天（默认）、2 天、7 天、自定义日期或永久有效。到期后链接无法再打开；你也可以随时手动停用，之后可以重新启用。" },
   { q: "链接被转发了怎么办？", a: "链接在有效期内，任何拿到它的人都可能打开。如果不希望继续被查看，可以立即停用这条链接。" },
   { q: "更新简历后，之前发出的链接会变吗？", a: "为同一份简历上传新版后，它的有效链接会自动展示最新版本，有效期与状态保持不变。新上传另一份简历不会影响旧链接。" },
   { q: "必须公开手机号和邮箱吗？", a: "不必。分享页上的公开信息卡和投递留言都是可选的，不填写时招聘方只看到简历本身。私人备注（例如「投给 A 公司产品岗」）只有你自己能看到。" },
   { q: "删除简历后会怎样？", a: "删除后，这份简历的所有分享链接会一起失效，对方无法再查看或下载。" },
-  { q: "可以不注册直接用吗？", a: "可以。选择「无需注册，直接上传」，即可上传 1 份 PDF 简历，并同时保留最多 3 条 1 天、2 天或 7 天有效的链接。游客简历上传 14 天后自动删除；请保存好页面上的管理链接，换设备或清除浏览器数据后要凭它继续管理。需要上传 Word、长期保存或永久链接时，注册即可。" },
+  { q: "可以不注册直接用吗？", a: `可以。选择「无需注册，直接上传」，即可上传 1 份 ${GUEST_FORMATS} 简历，并同时保留最多 3 条 1 天、2 天或 7 天有效的链接。游客简历上传 14 天后自动删除；请保存好页面上的管理链接，换设备或清除浏览器数据后要凭它继续管理。需要上传 Word、长期保存或永久链接时，注册即可。` },
   { q: "能分享到 X、Facebook 等社交平台吗？", a: "创建链接后可以一键发送到 Telegram、WhatsApp、邮件或手机上的其他应用，适合发给具体的招聘方。我们不提供发布到 X、Facebook 等公开平台的按钮：简历包含个人信息，公开发帖后无法控制谁会看到，也难以真正收回。" },
   { q: "忘记密码可以找回吗？", a: "目前暂不支持邮箱验证和密码找回，请妥善保管密码。该能力会在后续版本中提供。" },
 ];
@@ -99,8 +100,8 @@ export default async function Home() {
         <div className={cn(container, "grid items-center gap-10 pt-10 pb-12 sm:pt-14 sm:pb-16 lg:grid-cols-[1.05fr_1fr] lg:gap-12")}>
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground"><ShieldCheck className="size-3.5 text-primary" />链接有效期由你决定</p>
-            <h1 className="mt-6 text-[34px] leading-[1.25] font-bold tracking-tight text-balance sm:text-5xl sm:leading-[1.2]">把简历放在线上，<br />随时分享给招聘方。</h1>
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">上传 PDF 或 Word 简历，为不同公司或联系人创建独立链接，并选择有效期。招聘方无需注册，打开即可查看、打印和下载。</p>
+            <h1 className="mt-6 text-[34px] leading-[1.25] font-bold tracking-tight text-balance sm:text-5xl sm:leading-[1.2]">把简历放在线上，<br />随时分享给招聘方</h1>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">上传 {USER_FORMATS} 简历，为不同公司或联系人创建独立链接，并选择有效期。招聘方无需注册，打开即可查看、打印和下载。</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               {signedIn
                 ? <Button asChild size="lg" className="h-12 px-7 text-[15px]"><a href="/app">进入工作区<ArrowRight /></a></Button>
@@ -123,7 +124,7 @@ export default async function Home() {
       {/* 使用方式 */}
       <section id="how" className={sectionY}>
         <div className={container}>
-          <SectionHeading eyebrow="使用方式" title="三步，完成一次投递" text="链接由你自己发出，我们不会替你联系招聘方。" />
+          <SectionHeading eyebrow="使用方式" title="三步，完成一次投递" text="链接由你自己发出，我们不会替你联系招聘方" />
           <ol className={cn(contentTop, cardGrid, "md:grid-cols-3")}>
             {steps.map((step, index) => <li key={step.title} className={card}>
               <div className="flex items-center gap-3">
@@ -147,7 +148,7 @@ export default async function Home() {
       {/* 产品功能 */}
       <section id="features" className={sectionY}>
         <div className={container}>
-          <SectionHeading eyebrow="产品功能" title="专门为投简历做的" text="不是网盘，也不是模板库，只做一件事：让招聘方顺利看到你的简历。" />
+          <SectionHeading eyebrow="产品功能" title="专门为投简历做的" text="不是网盘，也不是模板库，只做一件事：让招聘方顺利看到你的简历" />
           <div className={cn(contentTop, cardGrid, "md:grid-cols-3")}>
             {features.map((feature) => <div key={feature.title} className={card}>
               <CardText icon={feature.icon} title={feature.title} text={feature.text} />
@@ -169,7 +170,7 @@ export default async function Home() {
       {/* 适用场景 */}
       <section id="scenarios" className={sectionY}>
         <div className={container}>
-          <SectionHeading eyebrow="适用场景" title="求职路上，这些时候用得上" text="我们不替你投递，只让发出去的每份简历都管得住。" />
+          <SectionHeading eyebrow="适用场景" title="求职路上，这些时候用得上" text="我们不替你投递，只让发出去的每份简历都管得住" />
           <div className={cn(contentTop, cardGrid, "sm:grid-cols-2 lg:grid-cols-4")}>
             {scenarios.map((item) => <div key={item.title} className={card}>
               <CardText icon={item.icon} title={item.title} text={item.text} />
@@ -181,7 +182,7 @@ export default async function Home() {
       {/* 与常见方式对比 */}
       <section id="compare" className={sectionY}>
         <div className={container}>
-          <SectionHeading eyebrow="为什么放在线上" title="和纸质简历、邮件附件、网盘链接比" text="纸质简历要打印、递送，改一个字就得重印；附件一旦发出就收不回；网盘链接常常要求对方登录或下载 App。" />
+          <SectionHeading eyebrow="为什么放在线上" title="和纸质简历、邮件附件、网盘链接比" text="纸质简历要打印、递送，改一个字就得重印；附件一旦发出就收不回；网盘链接常常要求对方登录或下载 App" />
           <div className={cn(contentTop, "mx-auto max-w-4xl")}>
             {/* relative：让单元格里 sr-only 的绝对定位文字留在表格容器内，否则会撑宽手机页面 */}
             <div className="landing-surface relative overflow-hidden rounded-xl border">
@@ -203,7 +204,7 @@ export default async function Home() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">「—」表示部分支持，取决于具体服务或设置。</p>
+            <p className="mt-3 text-xs text-muted-foreground">「—」表示部分支持，取决于具体服务或设置</p>
             <div className={cn(card, "mt-4 flex gap-3")}>
               <Printer className="mt-0.5 size-5 shrink-0 text-primary" />
               <p className="text-[15px] leading-relaxed text-muted-foreground"><span className="font-medium text-foreground">面试现场仍要纸质版？</span>不冲突。你可以在自己的空间里随时打印最新版本，招聘方也能在分享页直接打印，不必提前准备一沓、改了又重印。</p>
@@ -242,14 +243,14 @@ export default async function Home() {
               </div>;
             })}
           </div>
-          <p className="mt-4 text-center text-sm text-muted-foreground">游客没有账号，请保存好上传后显示的管理链接。</p>
+          <p className="mt-4 text-center text-sm text-muted-foreground">游客没有账号，请保存好上传后显示的管理链接</p>
         </div>
       </section>}
 
       {/* 规划中：未上线功能明确标注，不当作现有能力宣传 */}
       <section id="roadmap" className={sectionY}>
         <div className={container}>
-          <SectionHeading eyebrow="规划中" title="接下来会做的事" text="以下功能尚未上线，具体范围与时间以后续公告为准。" />
+          <SectionHeading eyebrow="规划中" title="接下来会做的事" text="以下功能尚未上线，具体范围与时间以后续公告为准" />
           <div className={cn(contentTop, cardGrid, "mx-auto max-w-4xl md:grid-cols-2")}>
             {roadmap.map((item) => <div key={item.title} className={cn(card, "border-dashed")}>
               <div className="flex items-center gap-3">
@@ -282,7 +283,7 @@ export default async function Home() {
           <div className="flex flex-col items-start gap-6 rounded-2xl bg-primary px-6 py-8 text-primary-foreground sm:px-10 sm:py-10 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-2xl font-bold sm:text-3xl">准备好下一次投递了吗？</h2>
-              <p className="mt-3 text-primary-foreground/80">上传一份简历，几分钟内就能发出第一条链接。</p>
+              <p className="mt-3 text-primary-foreground/80">上传一份简历，几分钟内就能发出第一条链接</p>
             </div>
             {signedIn
               ? <Button asChild size="lg" variant="secondary" className="h-12 px-7 text-[15px]"><a href="/app">进入工作区<ArrowRight /></a></Button>

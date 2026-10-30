@@ -1,4 +1,6 @@
-export const MAX_RESUME_BYTES = 10 * 1024 * 1024;
+import { MAX_SIZE_MB, SIZE_ERROR } from "./format-copy.ts";
+
+export const MAX_RESUME_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 export async function ownerPrefix(userId: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userId));
@@ -48,8 +50,8 @@ export function hasMagic(bytes: Uint8Array, type: SourceType) {
 
 export async function readBoundedFile(request: Request, type: SourceType) {
   const length = Number(request.headers.get("content-length") ?? 0);
-  if (length > MAX_RESUME_BYTES) throw new Error("文件不能超过 10 MB。");
-  if (!request.body) throw new Error("请选择要上传的文件。");
+  if (length > MAX_RESUME_BYTES) throw new Error(SIZE_ERROR);
+  if (!request.body) throw new Error("请选择要上传的文件");
   const reader = request.body.getReader();
   const parts: Uint8Array[] = [];
   let size = 0;
@@ -60,7 +62,7 @@ export async function readBoundedFile(request: Request, type: SourceType) {
       size += value.byteLength;
       if (size > MAX_RESUME_BYTES) {
         await reader.cancel();
-        throw new Error("文件不能超过 10 MB。");
+        throw new Error(SIZE_ERROR);
       }
       parts.push(value);
     }
@@ -69,7 +71,7 @@ export async function readBoundedFile(request: Request, type: SourceType) {
   let offset = 0;
   for (const part of parts) { bytes.set(part, offset); offset += part.byteLength; }
   if (!hasMagic(bytes, type)) {
-    throw new Error(type === "pdf" ? "这不是有效的 PDF 文件，请检查后重试。" : "这不是有效的 Word 文件，请检查后重试。");
+    throw new Error(type === "pdf" ? "这不是有效的 PDF 文件，请检查后重试" : "这不是有效的 Word 文件，请检查后重试");
   }
   return bytes;
 }

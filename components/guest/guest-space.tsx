@@ -25,8 +25,8 @@ export function GuestSpace() {
     window.history.replaceState(null, "", window.location.pathname);
     fetch("/api/guest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key }) })
       .then(async (response) => {
-        if (!response.ok) throw new Error(((await response.json()) as { error?: string }).error || "管理链接无效。");
-        toast.success("已在这个浏览器恢复你的游客空间。");
+        if (!response.ok) throw new Error(((await response.json()) as { error?: string }).error || "管理链接无效");
+        toast.success("已在这个浏览器恢复你的游客空间");
         setWorkspaceKey((value) => value + 1);
       })
       .catch((error: Error) => toast.error(error.message));
@@ -61,7 +61,7 @@ function ManageLinkCard() {
   const copy = useCallback(async () => {
     await navigator.clipboard.writeText(url);
     setCopied(true);
-    toast.success("管理链接已复制，请保存在只有你能看到的地方。");
+    toast.success("管理链接已复制，请保存在只有你能看到的地方");
     setTimeout(() => setCopied(false), 2000);
   }, [url]);
 

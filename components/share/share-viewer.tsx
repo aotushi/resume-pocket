@@ -77,7 +77,7 @@ export function ShareViewer(props: Props) {
     </header>
 
     {demo && <div className="border-b border-warning/30 bg-warning/10 print:hidden">
-      <p className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-2 text-sm sm:px-6"><Info className="size-4 shrink-0 text-warning" />这是使用虚构内容的示例分享页，用来展示招聘方打开链接后看到的样子。</p>
+      <p className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-2 text-sm sm:px-6"><Info className="size-4 shrink-0 text-warning" />这是使用虚构内容的示例分享页，用来展示招聘方打开链接后看到的样子</p>
     </div>}
 
     {(hasProfile || share.note) && <section aria-label="分享者公开信息" className="border-b bg-card print:hidden">
@@ -110,7 +110,7 @@ export function ShareViewer(props: Props) {
           </div>}
           {demo && <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => setZoom(null)} aria-pressed={zoom === null}><Maximize2 />适应宽度</Button>}
           <Button variant="outline" onClick={() => window.print()} disabled={!demo && !printReady}><Printer /><span className="hidden sm:inline">打印</span></Button>
-          {demo ? <Button onClick={() => toast.info("这是示例页面，没有可下载的文件。")}><ArrowDownToLine /><span className="hidden sm:inline">下载</span></Button>
+          {demo ? <Button onClick={() => toast.info("这是示例页面，没有可下载的文件")}><ArrowDownToLine /><span className="hidden sm:inline">下载</span></Button>
             : <Button asChild><a href={`${fileUrl}?download=1`} download><ArrowDownToLine /><span className="hidden sm:inline">下载</span></a></Button>}
         </div>
       </div>
@@ -125,12 +125,12 @@ export function ShareViewer(props: Props) {
       </div> : <div className="mx-auto print:w-full" style={{ width: `min(100%, ${PAGE_WIDTH}px)` }}>
         <PdfPreview url={fileUrl} onReady={setPrintReady} />
       </div>}
-      <p className="mt-6 text-center text-xs text-muted-foreground sm:hidden print:hidden">手机无法直接打印时，可下载后再打印。</p>
+      <p className="mt-6 text-center text-xs text-muted-foreground sm:hidden print:hidden">手机无法直接打印时，可下载后再打印</p>
     </main>
 
     <footer className="border-t bg-card print:hidden">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-4 py-5 text-xs text-muted-foreground sm:flex-row sm:justify-between sm:px-6">
-        <p>此简历由分享者提供，内容由其本人负责。</p>
+        <p>此简历由分享者提供，内容由其本人负责</p>
         <nav className="flex gap-4"><a className="hover:text-foreground" href="/privacy">隐私说明</a><Link className="hover:text-foreground" href="/">简历口袋首页</Link></nav>
       </div>
     </footer>

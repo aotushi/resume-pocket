@@ -62,7 +62,7 @@ export function LinkStateDemo() {
           </li>;
         })}
       </ul>
-      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">每家公司一条独立链接：有效期、留言和状态各自独立，停用其中一条不影响其他链接。</p>
+      <p className="mt-4 text-xs leading-relaxed text-muted-foreground">每家公司一条独立链接：有效期、留言和状态各自独立，停用其中一条不影响其他链接</p>
     </div>
 
     {/* 招聘方视角：手机框 */}

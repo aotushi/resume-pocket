@@ -84,12 +84,12 @@ function AuthForm({ mode, onModeChange, next }: { mode: Mode; onModeChange: (mod
         body: JSON.stringify({ email: email.trim().toLowerCase(), password, ...(isSignin ? {} : { name: email.trim().split("@")[0] }) }),
       });
       if (!response.ok) {
-        if (response.status === 429) throw new Error("请求过于频繁，请稍后再试。");
-        throw new Error(isSignin ? "邮箱或密码不正确，请重试。" : "注册未成功，请检查邮箱和密码，或尝试登录已有账号。");
+        if (response.status === 429) throw new Error("请求过于频繁，请稍后再试");
+        throw new Error(isSignin ? "邮箱或密码不正确，请重试" : "注册未成功，请检查邮箱和密码，或尝试登录已有账号");
       }
       window.location.assign(next);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "暂时无法连接，请稍后再试。");
+      setError(cause instanceof Error ? cause.message : "暂时无法连接，请稍后再试");
       setBusy(false);
     }
   }
@@ -99,7 +99,7 @@ function AuthForm({ mode, onModeChange, next }: { mode: Mode; onModeChange: (mod
       <span className="grid size-11 place-items-center rounded-full bg-secondary text-primary"><LockKeyhole className="size-5" /></span>
       <div className="space-y-1.5">
         <DialogTitle className="text-xl">{isSignin ? "登录简历口袋" : "创建你的账号"}</DialogTitle>
-        <DialogDescription>{isSignin ? "登录后管理你的简历。" : "注册后即可上传并在多设备访问简历。"}</DialogDescription>
+        <DialogDescription>{isSignin ? "登录后管理你的简历" : "注册后即可上传并在多设备访问简历"}</DialogDescription>
       </div>
     </DialogHeader>
 
@@ -124,7 +124,7 @@ function AuthForm({ mode, onModeChange, next }: { mode: Mode; onModeChange: (mod
           </button>
         </div>
         <p id="auth-password-hint" className="text-xs leading-relaxed text-muted-foreground">
-          {isSignin ? "暂不支持找回密码，请妥善保管。" : "密码 10–128 个字符。目前暂不支持邮箱找回，请妥善保管。"}
+          {isSignin ? "暂不支持找回密码，请妥善保管" : "密码 10–128 个字符，暂不支持邮箱找回，请妥善保管"}
         </p>
       </div>
 
@@ -135,7 +135,7 @@ function AuthForm({ mode, onModeChange, next }: { mode: Mode; onModeChange: (mod
       </Button>
 
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
-        继续即表示你同意<a className="text-primary underline-offset-4 hover:underline" href="/terms">服务说明</a>和<a className="text-primary underline-offset-4 hover:underline" href="/privacy">隐私说明</a>。
+        继续即表示你同意<a className="text-primary underline-offset-4 hover:underline" href="/terms">服务说明</a>和<a className="text-primary underline-offset-4 hover:underline" href="/privacy">隐私说明</a>
       </p>
     </div>
   </form>;

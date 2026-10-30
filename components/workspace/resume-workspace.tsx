@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDownToLine, CloudUpload, ExternalLink, FileDown, FileText, MoreHorizontal, Plus, Printer, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { FORMAT_ERROR, GUEST_FORMAT_ERROR, GUEST_FORMATS, GUEST_PICK_ERROR, MAX_SIZE_TEXT, SIZE_ERROR, USER_FORMATS } from "@/app/lib/format-copy";
+import { MAX_RESUME_BYTES } from "@/app/lib/resume-policy";
 import type { Resume } from "@/app/lib/resumes";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +23,6 @@ import { cn } from "@/lib/utils";
 import { PageHeader } from "./page-header";
 import { PdfPreview } from "./pdf-preview";
 
-const MAX_BYTES = 10 * 1024 * 1024;
 // 注册用户可传 Word（转换为 PDF 预览），游客只能传 PDF
 const PDF_ACCEPT = "application/pdf,.pdf";
 const WORD_ACCEPT = `${PDF_ACCEPT},.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword`;
@@ -76,7 +77,7 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
         if (response.status === 401 && guest) { if (active) updateResumes([]); return; }
         if (response.status === 401) { window.location.href = "/?auth=signin&next=/app"; return; }
         const data = await response.json() as { error?: string; resumes: Resume[] };
-        if (!response.ok) throw new Error(data.error || "无法读取简历。");
+        if (!response.ok) throw new Error(data.error || "无法读取简历");
         if (!active) return;
         updateResumes(data.resumes);
         const requested = new URL(window.location.href).searchParams.get("resume");
@@ -93,20 +94,20 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
     if (!file || uploading || !canUpload) return;
     const lower = file.name.toLowerCase();
     const isWord = lower.endsWith(".docx") || lower.endsWith(".doc");
-    if (guest && isWord) { toast.error("游客空间只支持 PDF。注册后即可上传 Word 简历。"); return; }
-    if (!lower.endsWith(".pdf") && !isWord) { toast.error(guest ? "请选择 PDF 格式的简历。" : "请选择 PDF 或 Word（DOCX、DOC）格式的简历。"); return; }
-    if (file.size > MAX_BYTES) { toast.error("文件不能超过 10 MB。"); return; }
+    if (guest && isWord) { toast.error(GUEST_FORMAT_ERROR); return; }
+    if (!lower.endsWith(".pdf") && !isWord) { toast.error(guest ? GUEST_PICK_ERROR : FORMAT_ERROR); return; }
+    if (file.size > MAX_RESUME_BYTES) { toast.error(SIZE_ERROR); return; }
     setUploading(true);
     setConverting(isWord);
     try {
       const response = await fetch("/api/resumes", { method: "POST", headers: { "Content-Type": file.type || "application/octet-stream", "X-Resume-Name": encodeURIComponent(file.name) }, body: file });
       const data = await response.json() as { error?: string; resume: Resume };
-      if (!response.ok) throw new Error(data.error || "上传失败，请重试。");
+      if (!response.ok) throw new Error(data.error || "上传失败，请重试");
       updateResumes([data.resume, ...resumes]);
       chooseResume(data.resume.id);
       toast.success("上传成功", { description: data.resume.name });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "上传失败，请重试。");
+      toast.error(error instanceof Error ? error.message : "上传失败，请重试");
     } finally {
       setUploading(false);
       setConverting(false);
@@ -133,14 +134,14 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
       const response = await fetch(`/api/resumes/${pendingDelete.id}`, { method: "DELETE" });
       if (!response.ok) {
         const data = await response.json() as { error?: string };
-        throw new Error(data.error || "删除失败，请重试。");
+        throw new Error(data.error || "删除失败，请重试");
       }
       const remaining = resumes.filter((resume) => resume.id !== pendingDelete.id);
       updateResumes(remaining);
       if (selectedId === pendingDelete.id) chooseResume(remaining[0]?.id ?? null);
-      toast.success("这份简历已删除。");
+      toast.success("这份简历已删除");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "删除失败，请重试。");
+      toast.error(error instanceof Error ? error.message : "删除失败，请重试");
     } finally { setDeleting(false); setPendingDelete(null); }
   }
 
@@ -157,11 +158,11 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
   };
 
   return <TooltipProvider>
-    <input ref={inputRef} className="sr-only" type="file" accept={guest ? PDF_ACCEPT : WORD_ACCEPT} aria-label={guest ? "选择 PDF 简历" : "选择 PDF 或 Word 简历"} tabIndex={-1}
+    <input ref={inputRef} className="sr-only" type="file" accept={guest ? PDF_ACCEPT : WORD_ACCEPT} aria-label={`选择 ${guest ? GUEST_FORMATS : USER_FORMATS} 简历`} tabIndex={-1}
       onChange={(event) => { const file = event.currentTarget.files?.[0]; void upload(file); }} />
 
     <PageHeader title={guest ? "游客空间" : "我的简历"}
-      description={guest ? "无需注册：上传 1 份 PDF 简历，预览后创建短期分享链接。" : "保存、预览并下载你准备好的 PDF 或 Word 简历。"}
+      description={guest ? `无需注册：上传 1 份 ${GUEST_FORMATS} 简历，预览后创建短期分享链接` : `保存、预览并下载你准备好的 ${USER_FORMATS} 简历`}
       actions={resumes.length > 0 && canUpload && <Button size="lg" className="h-11" onClick={() => inputRef.current?.click()} disabled={uploading}>
         {uploading ? <Spinner /> : <Plus />}{uploading ? uploadingLabel : "上传简历"}
       </Button>} />
@@ -173,11 +174,11 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
     </div> : resumes.length === 0 ? <div {...dropHandlers} className={cn("mt-8 flex flex-col items-center rounded-xl border-2 border-dashed bg-card px-6 py-16 text-center transition-colors", dragging ? "border-primary bg-secondary" : "border-input/50")}>
       <span className="grid size-14 place-items-center rounded-full bg-secondary text-primary"><CloudUpload className="size-7" /></span>
       <h2 className="mt-5 text-lg font-semibold">{uploading ? uploadingLabel : "还没有简历"}</h2>
-      <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground">把{guest ? " PDF " : " PDF 或 Word "}简历拖到这里，或点击下方按钮选择文件。单个文件不超过 10 MB。</p>
+      <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground">把 {guest ? GUEST_FORMATS : USER_FORMATS} 简历拖到这里，或点击下方按钮选择文件。单个文件不超过 {MAX_SIZE_TEXT}。</p>
       <Button size="lg" className="mt-6 h-11" onClick={() => inputRef.current?.click()} disabled={uploading}>
-        {uploading ? <Spinner /> : <Plus />}{uploading ? uploadingLabel : guest ? "选择 PDF 文件" : "选择文件"}
+        {uploading ? <Spinner /> : <Plus />}{uploading ? uploadingLabel : guest ? `选择 ${GUEST_FORMATS} 文件` : "选择文件"}
       </Button>
-      <p className="mt-6 max-w-md text-xs leading-relaxed text-muted-foreground">{guest ? "游客简历保存 14 天后自动删除；上传即表示同意服务说明中的上传规则。" : "PDF 按原排版呈现；Word（DOCX、DOC）会转换为 PDF 在线预览，下载时提供原文件。"}</p>
+      <p className="mt-6 max-w-md text-xs leading-relaxed text-muted-foreground">{guest ? "游客简历保存 14 天后自动删除；上传即表示同意服务说明中的上传规则" : "PDF 按原排版呈现；Word（DOCX、DOC）会转换为 PDF 在线预览，下载时提供原文件"}</p>
     </div> : <div className="mt-8 grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] print:block">
       {/* 列表 */}
       <section aria-labelledby="list-title" className="print:hidden">
@@ -202,7 +203,7 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
           })}
         </ul>
         {canUpload ? <div {...dropHandlers} className={cn("mt-3 rounded-lg border-2 border-dashed p-4 text-center text-xs text-muted-foreground transition-colors", dragging ? "border-primary bg-secondary text-secondary-foreground" : "border-border")}>
-          {uploading ? uploadingLabel : guest ? "拖放 PDF 到这里快速上传" : "拖放 PDF 或 Word 到这里快速上传"}
+          {uploading ? uploadingLabel : `拖放 ${guest ? GUEST_FORMATS : USER_FORMATS} 到这里快速上传`}
         </div> : <p className="mt-3 rounded-lg bg-muted p-3 text-xs leading-relaxed text-muted-foreground">游客只能保存 1 份简历。要换一份，请先删除这份；注册后可保存多份。</p>}
       </section>
 

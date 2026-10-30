@@ -4,10 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 
 type Props = { url: string; onReady: (ready: boolean) => void };
+type PreviewError = "password" | "invalid" | "other";
+
+// 按 pdf.js 的异常名区分原因；其余（多为浏览器内核不支持或网络问题）统一引导下载或换浏览器
+const ERROR_TEXT: Record<PreviewError, string> = {
+  password: "这份文件设有密码，无法在线预览，可下载后输入密码查看",
+  invalid: "文件可能已损坏，无法在线预览，可尝试下载原文件",
+  other: "当前浏览器暂时无法预览，可下载原文件，或换用系统浏览器打开",
+};
 
 export function PdfPreview({ url, onReady }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<PreviewError | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,13 +24,13 @@ export function PdfPreview({ url, onReady }: Props) {
     const container = containerRef.current;
     if (!container) return;
     container.replaceChildren();
-    setError(false);
+    setError(null);
     setLoading(true);
     onReady(false);
 
     async function render() {
       try {
-        const pdfjs = await import("pdfjs-dist");
+        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
         pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
         const loadingTask = pdfjs.getDocument({
           url,
@@ -53,7 +61,7 @@ export function PdfPreview({ url, onReady }: Props) {
         }
         if (!cancelled) { setLoading(false); onReady(true); }
       } catch (cause) {
-        if (!cancelled) { console.error("Could not render PDF", cause); setLoading(false); setError(true); }
+        if (!cancelled) { console.error("Could not render PDF", cause); setLoading(false); setError(errorKind(cause)); }
       }
     }
     void render();
@@ -62,7 +70,14 @@ export function PdfPreview({ url, onReady }: Props) {
 
   return <>
     {loading && <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground print:hidden" role="status"><Spinner />正在打开简历，请稍等…</div>}
-    {error && <div className="mx-auto max-w-sm py-16 text-center text-sm leading-relaxed text-destructive print:hidden" role="alert">暂时无法预览这份文件，可能是文件损坏或受密码保护。你仍可下载原文件查看。</div>}
+    {error && <div className="mx-auto max-w-sm py-16 text-center text-sm leading-relaxed text-destructive print:hidden" role="alert">{ERROR_TEXT[error]}</div>}
     <div id="resume-print-area" className="flex w-full flex-col items-center gap-4 print:block" ref={containerRef} aria-busy={loading} />
   </>;
+}
+
+function errorKind(cause: unknown): PreviewError {
+  const name = (cause as { name?: string } | null)?.name;
+  if (name === "PasswordException") return "password";
+  if (name === "InvalidPDFException") return "invalid";
+  return "other";
 }

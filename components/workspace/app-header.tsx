@@ -17,7 +17,7 @@ export async function signOut() {
     if (!response.ok) throw new Error();
     window.location.href = "/";
   } catch {
-    toast.error("退出失败，请重试。");
+    toast.error("退出失败，请重试");
   }
 }
 

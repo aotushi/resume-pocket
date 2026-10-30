@@ -10,7 +10,7 @@ export async function GET(request: Request, { params }: Context) {
   try {
     const share = await resolveShare((await params).token);
     if (share.state !== "active") {
-      return Response.json({ error: "链接不存在或已失效。" }, { status: share.state === "inactive" ? 410 : 404, headers: { "Cache-Control": "no-store" } });
+      return Response.json({ error: "链接不存在或已失效" }, { status: share.state === "inactive" ? 410 : 404, headers: { "Cache-Control": "no-store" } });
     }
     const response = await resumeFileResponse(share.link.ownerPrefix, share.resume, new URL(request.url).searchParams.get("download"));
     response.headers.set("Cache-Control", "no-store");
@@ -19,6 +19,6 @@ export async function GET(request: Request, { params }: Context) {
     return response;
   } catch (error) {
     console.error("Could not read shared resume", error);
-    return Response.json({ error: "暂时无法打开简历，请稍后重试。" }, { status: 503 });
+    return Response.json({ error: "暂时无法打开简历，请稍后重试" }, { status: 503 });
   }
 }
