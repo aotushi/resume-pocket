@@ -173,8 +173,9 @@ function AuthForm({ mode, next }: { mode: Mode; next: string }) {
             {cooldown > 0 ? `${cooldown} 秒后可重新发送` : "重新发送"}
           </button>
         </div>
-        <InputOTP id="auth-code" maxLength={6} pattern="^[0-9]*$" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={setCode} containerClassName="justify-center" aria-describedby="auth-code-hint" autoFocus>
-          <InputOTPGroup>{[0, 1, 2, 3, 4, 5].map((index) => <InputOTPSlot key={index} index={index} className="size-11 text-base" />)}</InputOTPGroup>
+        <InputOTP id="auth-code" maxLength={6} pattern="^[0-9]*$" inputMode="numeric" autoComplete="one-time-code" value={code} onChange={setCode} aria-describedby="auth-code-hint" autoFocus>
+          {/* 六个独立方框铺满整行，与上方邮箱框同高同圆角 */}
+          <InputOTPGroup className="w-full gap-2">{[0, 1, 2, 3, 4, 5].map((index) => <InputOTPSlot key={index} index={index} className="h-11 flex-1 rounded-md border text-lg font-semibold tabular-nums" />)}</InputOTPGroup>
         </InputOTP>
         <p id="auth-code-hint" className="text-xs leading-relaxed text-muted-foreground">验证码已发送至 {sentTo}，10 分钟内有效；没收到请查看垃圾邮件</p>
       </div>}
