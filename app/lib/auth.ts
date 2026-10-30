@@ -6,7 +6,8 @@ import { headers } from "next/headers";
 import { getDb } from "../../db";
 import * as schema from "../../db/schema";
 
-export function getAuth() {
+/** onSendError：验证码邮件发送失败时调用。better-auth 会吞掉发送异常并照常返回成功，由调用方据此改为报错 */
+export function getAuth(onSendError?: () => void) {
   if (!env.BETTER_AUTH_SECRET || !env.BETTER_AUTH_URL) {
     throw new Error("Authentication is not configured: BETTER_AUTH_SECRET and BETTER_AUTH_URL are required.");
   }
@@ -20,7 +21,14 @@ export function getAuth() {
     // The Worker applies a Cloudflare rate limit to the sign-in and sign-up routes.
     rateLimit: { enabled: false },
     // 验证码登录：新邮箱验证通过即自动注册；忘记密码也走验证码重置
-    plugins: [emailOTP({ otpLength: 6, expiresIn: 600, allowedAttempts: 5, storeOTP: "hashed", sendVerificationOTP: sendCodeEmail })],
+    plugins: [emailOTP({ otpLength: 6, expiresIn: 600, allowedAttempts: 5, storeOTP: "hashed", sendVerificationOTP: async (data) => {
+      try {
+        await sendCodeEmail(data);
+      } catch (error) {
+        onSendError?.();
+        throw error;
+      }
+    } })],
   });
 }
 

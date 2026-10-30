@@ -73,6 +73,7 @@ const OTP_ERRORS: Record<string, string> = {
   INVALID_OTP: "验证码不正确，请检查后重试",
   OTP_EXPIRED: "验证码已过期，请重新获取",
   TOO_MANY_ATTEMPTS: "错误次数过多，请重新获取验证码",
+  OTP_SEND_FAILED: "验证码邮件发送失败，请稍后重试",
 };
 
 async function postAuth(path: string, body: Record<string, unknown>, fallback: string) {
