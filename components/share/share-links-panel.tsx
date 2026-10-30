@@ -283,7 +283,10 @@ function LinkRow({ link, resume, now, busy, onDisable, onEnable, onDelete }: Row
     setImaging(true);
     try {
       const blob = await renderShareImage({ fileUrl: `/api/resumes/${resume.id}?v=${encodeURIComponent(resume.version)}`, shareUrl: url, expiresAt: link.expiresAt, profile: link.profile, note: link.note });
-      const filename = `${[resume.name.replace(/\.[^.]+$/, ""), link.target].join("-").replace(/[\\/:*?"<>|\s]+/g, "_")}.png`;
+      // 文件名给收件人看：姓名-岗位-简历，缺项省略；没填姓名退回简历文件名。分享对象是自己的备注，不放进来
+      const name = link.profile.name?.trim();
+      const parts = name ? [name, link.profile.role?.trim(), "简历"] : [resume.name.replace(/\.[^.]+$/, "")];
+      const filename = `${parts.filter(Boolean).join("-").replace(/[\\/:*?"<>|\s]+/g, "_")}.png`;
       await saveShareImage(blob, filename);
       toast.success("图片已生成", { description: "图片发出后无法收回，停用链接只会让二维码失效" });
     } catch (error) {
