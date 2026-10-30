@@ -282,7 +282,7 @@ function LinkRow({ link, resume, now, busy, onDisable, onEnable, onDelete }: Row
     if (!url || imaging) return;
     setImaging(true);
     try {
-      const blob = await renderShareImage({ fileUrl: `/api/resumes/${resume.id}?v=${encodeURIComponent(resume.version)}`, shareUrl: url, expiresAt: link.expiresAt });
+      const blob = await renderShareImage({ fileUrl: `/api/resumes/${resume.id}?v=${encodeURIComponent(resume.version)}`, shareUrl: url, expiresAt: link.expiresAt, profile: link.profile, note: link.note });
       const filename = `${[resume.name.replace(/\.[^.]+$/, ""), link.target].join("-").replace(/[\\/:*?"<>|\s]+/g, "_")}.png`;
       await saveShareImage(blob, filename);
       toast.success("图片已生成", { description: "图片发出后无法收回，停用链接只会让二维码失效" });
