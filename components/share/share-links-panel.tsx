@@ -6,9 +6,10 @@
  * 注册用户另有自定义日期与永久有效。重新启用不改变原有效期，已过期的链接只能删除后新建。
  * 「分享」发一句话加链接：手机走系统分享面板，不支持时复制文字和链接；电脑端另有二维码，方便对方用手机扫开。
  * 「发送到」只提供私聊类渠道（Telegram、WhatsApp、邮件），不提供 X/Facebook 等公开发帖。
+ * 「图片」把简历和这条链接的二维码拼成一张高清长图，一键生成，不提供选项。
  */
 import { useCallback, useEffect, useState } from "react";
-import { Ban, Check, ChevronDown, Clock3, Copy, Infinity as InfinityIcon, Link2, Mail, MoreHorizontal, Plus, QrCode, RotateCcw, Send, Share, Trash2 } from "lucide-react";
+import { Ban, Check, ChevronDown, Clock3, Copy, ImageDown, Infinity as InfinityIcon, Link2, Mail, MoreHorizontal, Plus, QrCode, RotateCcw, Send, Share, Trash2 } from "lucide-react";
 import QRCode from "qrcode";
 import { toast } from "sonner";
 import { GUEST_LINK_DAYS } from "@/app/lib/guest-policy";
@@ -24,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
+import { renderShareImage, saveShareImage } from "@/lib/share-image";
 import { cn } from "@/lib/utils";
 import { ShareViewsDialog } from "./share-views-dialog";
 
@@ -213,7 +215,7 @@ export function ShareLinksPanel({ resume, guest = false }: { resume: Resume; gue
             <Link2 className="size-6 text-muted-foreground" />
             <p className="mt-3 text-sm text-muted-foreground">还没有链接。创建后可以复制，或直接发送到聊天应用。</p>
           </div> : <ul className="grid gap-3">
-            {links.map((link) => <LinkRow key={link.id} link={link} now={now} busy={busyId === link.id}
+            {links.map((link) => <LinkRow key={link.id} link={link} resume={resume} now={now} busy={busyId === link.id}
               onDisable={() => void setActive(link, false)}
               onEnable={() => setConfirm({ action: "enable", link })}
               onDelete={() => setConfirm({ action: "delete", link })} />)}
@@ -245,10 +247,11 @@ function statusOf(link: ShareLinkView, now: number) {
   return shareStatus({ active: link.active, expiresAt: link.expiresAt ? new Date(link.expiresAt) : null }, new Date(now));
 }
 
-type RowProps = { link: ShareLinkView; now: number; busy: boolean; onDisable: () => void; onEnable: () => void; onDelete: () => void };
+type RowProps = { link: ShareLinkView; resume: Resume; now: number; busy: boolean; onDisable: () => void; onEnable: () => void; onDelete: () => void };
 
-function LinkRow({ link, now, busy, onDisable, onEnable, onDelete }: RowProps) {
+function LinkRow({ link, resume, now, busy, onDisable, onEnable, onDelete }: RowProps) {
   const [copied, setCopied] = useState(false);
+  const [imaging, setImaging] = useState(false);
   const status = statusOf(link, now);
   const expired = Boolean(link.expiresAt && new Date(link.expiresAt).getTime() <= now);
   const url = link.url;
@@ -273,6 +276,22 @@ function LinkRow({ link, now, busy, onDisable, onEnable, onDelete }: RowProps) {
     setCopied(true);
     toast.success("链接已复制");
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function saveImage() {
+    if (!url || imaging) return;
+    setImaging(true);
+    try {
+      const blob = await renderShareImage({ fileUrl: `/api/resumes/${resume.id}?v=${encodeURIComponent(resume.version)}`, shareUrl: url, expiresAt: link.expiresAt });
+      const filename = `${[resume.name.replace(/\.[^.]+$/, ""), link.target].join("-").replace(/[\\/:*?"<>|\s]+/g, "_")}.png`;
+      await saveShareImage(blob, filename);
+      toast.success("图片已生成", { description: "图片发出后无法收回，停用链接只会让二维码失效" });
+    } catch (error) {
+      console.error("Could not create share image", error);
+      toast.error("图片生成失败，请稍后重试");
+    } finally {
+      setImaging(false);
+    }
   }
 
   const badge = { active: "有效", inactive: "已停用", expired: "已过期" }[status];
@@ -305,6 +324,7 @@ function LinkRow({ link, now, busy, onDisable, onEnable, onDelete }: RowProps) {
       <Button size="sm" onClick={() => void share()}><Share />分享</Button>
       <Button size="sm" variant="outline" onClick={() => void copy()}>{copied ? <Check /> : <Copy />}复制链接</Button>
       <QrDialog url={url} target={link.target} />
+      <Button size="sm" variant="outline" disabled={imaging} onClick={() => void saveImage()}>{imaging ? <Spinner /> : <ImageDown />}{imaging ? "生成中…" : "图片"}</Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild><Button size="sm" variant="outline"><Send />发送到</Button></DropdownMenuTrigger>
         <DropdownMenuContent align="start">
