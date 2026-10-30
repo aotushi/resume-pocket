@@ -18,7 +18,7 @@
   // Word 转 PDF：LibreOffice 容器，需 Workers Paid
   // 本地 dev 不启动容器（Windows 不支持）：手动 docker run 转换镜像，并在 .dev.vars 设置 WORD_CONVERTER_URL
   "dev": { "enable_containers": false },
-  "vars": { "WORD_CONVERTER_URL": "", "EMAIL_FROM": "" },
+  "vars": { "WORD_CONVERTER_URL": "", "EMAIL_FROM": "no-reply@jianli.9shi.cc" },
   // 验证码邮件：Cloudflare Email Service，发件域名需先开通 Email Sending，再把 EMAIL_FROM 设为该域名下的地址
   "send_email": [{ "name": "EMAIL" }],
   // 镜像由 Workers Builds 在海外构建，直接用 deb.debian.org；本机手动构建需要国内源时用 --build-arg APT_MIRROR（见 README）
