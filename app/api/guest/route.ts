@@ -1,4 +1,4 @@
-import { GUEST_COOKIE, guestCookie, guestPrefix, isGuestKey, readGuestKey } from "../../lib/guest-policy";
+import { clearGuestCookies, guestCookies, guestPrefix, isGuestKey, readGuestKey, withCookies } from "../../lib/guest-policy";
 import { guestRateLimited } from "../../lib/owner";
 import { isSameOrigin, listResumes } from "../../lib/resumes";
 
@@ -21,11 +21,11 @@ export async function POST(request: Request) {
   if (!isGuestKey(key)) return missing;
   const resumes = await listResumes({ kind: "guest", prefix: await guestPrefix(key), key });
   if (resumes.length === 0) return missing;
-  return Response.json({ ok: true }, { headers: { ...noStore, "Set-Cookie": guestCookie(key, request) } });
+  return Response.json({ ok: true }, { headers: withCookies(guestCookies(key, request), noStore) });
 }
 
 /** 让当前浏览器忘记游客空间（不删除文件，凭管理链接仍可恢复） */
 export async function DELETE(request: Request) {
   if (!isSameOrigin(request)) return Response.json({ error: "请求来源不正确" }, { status: 403 });
-  return new Response(null, { status: 204, headers: { "Set-Cookie": `${GUEST_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax` } });
+  return new Response(null, { status: 204, headers: withCookies(clearGuestCookies()) });
 }

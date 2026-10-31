@@ -39,6 +39,11 @@ export function useSignedIn() {
   return useSyncExternalStore(subscribe, () => signedIn ?? readHint(), () => false);
 }
 
+/** 只认服务器确认过的结果，不用上次的记录：用于跳转，避免会话已过期却按旧记录跳走 */
+export function useConfirmedSignedIn() {
+  return useSyncExternalStore(subscribe, () => signedIn === true, () => false);
+}
+
 /** 按登录状态二选一渲染；两个分支都可以是服务端组件 */
 export function SignedInSwitch({ signedIn: whenIn, signedOut: whenOut = null }: { signedIn?: React.ReactNode; signedOut?: React.ReactNode }) {
   return <>{useSignedIn() ? whenIn : whenOut}</>;

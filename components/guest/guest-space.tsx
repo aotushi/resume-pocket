@@ -5,10 +5,12 @@
  * 管理链接形如 /try#k=<凭证>：凭证放在 # 之后，不会随请求发到服务器或写进访问日志。
  */
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Copy, Eye, EyeOff, KeyRound, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import type { Resume } from "@/app/lib/resumes";
 import { AuthButton } from "@/components/auth/auth-dialog";
+import { useConfirmedSignedIn } from "@/components/site/signed-in";
 import { Button } from "@/components/ui/button";
 import { ResumeWorkspace } from "@/components/workspace/resume-workspace";
 import { ShareLinksPanel } from "@/components/share/share-links-panel";
@@ -17,6 +19,11 @@ export function GuestSpace() {
   const [workspaceKey, setWorkspaceKey] = useState(0);
   const [resumes, setResumes] = useState<Resume[]>([]);
   const resume = resumes[0] ?? null;
+  const router = useRouter();
+  const signedIn = useConfirmedSignedIn();
+
+  // 页面是静态的，登录状态在浏览器里判断：已登录用户直接去自己的工作区
+  useEffect(() => { if (signedIn) router.replace("/app"); }, [router, signedIn]);
 
   // 通过管理链接进入：先在当前浏览器恢复凭证，再重新加载工作区
   useEffect(() => {

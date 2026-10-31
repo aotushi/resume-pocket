@@ -1,5 +1,5 @@
 import { FORMAT_ERROR, GUEST_FORMAT_ERROR } from "../../lib/format-copy";
-import { GUEST_MAX_RESUMES, guestCookie, guestPrefix, newGuestKey } from "../../lib/guest-policy";
+import { GUEST_MAX_RESUMES, guestCookies, guestHintCookie, guestPrefix, newGuestKey, withCookies } from "../../lib/guest-policy";
 import { guestRateLimited, resolveOwner } from "../../lib/owner";
 import { isSameOrigin, listResumes, readUpload, resumeFromObject, saveResume, uploadName } from "../../lib/resumes";
 
@@ -11,7 +11,10 @@ export async function GET(request: Request) {
 
   try {
     const resumes = await listResumes(owner);
-    return Response.json({ resumes }, { headers: { "Cache-Control": "private, no-store" } });
+    const headers = new Headers({ "Cache-Control": "private, no-store" });
+    // 标记上线前创建的游客空间没有标记 Cookie，读取时补上
+    if (owner.kind === "guest") headers.append("Set-Cookie", guestHintCookie(request));
+    return Response.json({ resumes }, { headers });
   } catch (error) {
     console.error("Could not list resumes", error);
     return Response.json({ error: "暂时无法读取简历，请稍后重试" }, { status: 500 });
@@ -47,7 +50,7 @@ export async function POST(request: Request) {
 
   try {
     const object = await saveResume(owner.prefix, crypto.randomUUID(), { ...named, ...upload });
-    const headers = newKey ? { "Set-Cookie": guestCookie(newKey, request) } : undefined;
+    const headers = newKey ? withCookies(guestCookies(newKey, request)) : undefined;
     return Response.json({ resume: resumeFromObject(object, owner.kind) }, { status: 201, headers });
   } catch (error) {
     console.error("Could not save resume", error);

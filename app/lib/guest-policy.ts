@@ -3,6 +3,8 @@
  * 游客凭证是 64 位十六进制随机串，只存在浏览器 Cookie 与管理链接里；服务端只用它的摘要作存储前缀。
  */
 export const GUEST_COOKIE = "rp_guest";
+// 不含凭证、页面脚本可读的标记：/try 据此当场判断有没有游客空间，没有就直接显示上传界面
+export const GUEST_HINT_COOKIE = "rp_guest_hint";
 export const GUEST_MAX_RESUMES = 1;
 export const GUEST_RETENTION_DAYS = 14;
 export const GUEST_MAX_LINKS = 3;
@@ -38,9 +40,28 @@ export function readGuestKey(request: Request) {
   return null;
 }
 
-export function guestCookie(key: string, request: Request) {
-  const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
-  return `${GUEST_COOKIE}=${key}; Path=/; Max-Age=${GUEST_RETENTION_DAYS * 24 * 60 * 60}; HttpOnly; SameSite=Lax${secure}`;
+const GUEST_COOKIE_MAX_AGE = GUEST_RETENTION_DAYS * 24 * 60 * 60;
+const secureFlag = (request: Request) => new URL(request.url).protocol === "https:" ? "; Secure" : "";
+
+export function guestHintCookie(request: Request) {
+  return `${GUEST_HINT_COOKIE}=1; Path=/; Max-Age=${GUEST_COOKIE_MAX_AGE}; SameSite=Lax${secureFlag(request)}`;
+}
+
+/** 写入游客凭证与标记，返回多条 Set-Cookie */
+export function guestCookies(key: string, request: Request) {
+  return [`${GUEST_COOKIE}=${key}; Path=/; Max-Age=${GUEST_COOKIE_MAX_AGE}; HttpOnly; SameSite=Lax${secureFlag(request)}`, guestHintCookie(request)];
+}
+
+export const clearGuestCookies = () => [
+  `${GUEST_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`,
+  `${GUEST_HINT_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`,
+];
+
+/** 多条 Set-Cookie 不能放进普通对象，只能逐条 append */
+export function withCookies(cookies: string[], init?: HeadersInit) {
+  const headers = new Headers(init);
+  for (const cookie of cookies) headers.append("Set-Cookie", cookie);
+  return headers;
 }
 
 export function guestDeleteAt(uploadedAt: Date) {

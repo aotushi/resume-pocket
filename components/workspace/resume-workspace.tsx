@@ -6,10 +6,11 @@
  * 选中简历下方是它的分享链接面板（游客空间由 GuestSpace 自行放置）。
  * guest 模式用于 /try 游客空间：同一套接口按游客 Cookie 识别所有者，只能保存 1 份，并显示自动删除时间。
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowDownToLine, CloudUpload, ExternalLink, FileDown, FileText, MoreHorizontal, Plus, Printer, RefreshCw, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { FORMAT_ERROR, GUEST_FORMAT_ERROR, GUEST_FORMATS, GUEST_PICK_ERROR, MAX_SIZE_TEXT, SIZE_ERROR, USER_FORMATS } from "@/app/lib/format-copy";
+import { GUEST_HINT_COOKIE } from "@/app/lib/guest-policy";
 import { MAX_RESUME_BYTES } from "@/app/lib/resume-policy";
 import type { Resume } from "@/app/lib/resumes";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -37,10 +38,16 @@ const formatDay = (date: string) => new Intl.DateTimeFormat("zh-CN", { month: "l
 
 type Props = { guest?: boolean; onResumesChange?: (resumes: Resume[]) => void };
 
+const subscribeNothing = () => () => {};
+const hasGuestHint = () => new RegExp(`(?:^|;\\s*)${GUEST_HINT_COOKIE}=1`).test(document.cookie);
+
 export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // 游客从没上传过（没有标记 Cookie）时列表必然为空：直接显示上传界面，不等接口返回；服务端渲染时无法判断，仍显示骨架
+  const knownEmpty = useSyncExternalStore(subscribeNothing, () => guest && !hasGuestHint(), () => false);
+  const uploadCount = useRef(0);
   const [loadError, setLoadError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [converting, setConverting] = useState(false);
@@ -75,19 +82,22 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
 
   const load = useCallback(() => {
     let active = true;
+    // 列表请求发出后又上传过，返回的是上传前的旧列表，丢弃
+    const uploadsAtStart = uploadCount.current;
+    const stale = () => !active || uploadCount.current !== uploadsAtStart;
     fetch("/api/resumes", { cache: "no-store" })
       .then(async (response) => {
         // 游客还没上传过时没有 Cookie，按空空间处理
-        if (response.status === 401 && guest) { if (active) updateResumes([]); return; }
+        if (response.status === 401 && guest) { if (!stale()) updateResumes([]); return; }
         if (response.status === 401) { window.location.href = "/?auth=signin&next=/app"; return; }
         const data = await response.json() as { error?: string; resumes: Resume[] };
         if (!response.ok) throw new Error(data.error || "无法读取简历");
-        if (!active) return;
+        if (stale()) return;
         updateResumes(data.resumes);
         const requested = new URL(window.location.href).searchParams.get("resume");
         chooseResume(data.resumes.find((item) => item.id === requested)?.id ?? data.resumes[0]?.id ?? null);
       })
-      .catch((error: Error) => { if (active) setLoadError(error.message); })
+      .catch((error: Error) => { if (!stale()) setLoadError(error.message); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [chooseResume, guest, updateResumes]);
@@ -108,6 +118,7 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
     if (!file || uploading || !canUpload) return;
     const isWord = checkFile(file);
     if (isWord === null) return;
+    uploadCount.current += 1;
     setUploading(true);
     setConverting(isWord);
     try {
@@ -116,6 +127,7 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
       if (!response.ok) throw new Error(data.error || "上传失败，请重试");
       updateResumes([data.resume, ...resumes]);
       chooseResume(data.resume.id);
+      setLoading(false);
       toast.success("上传成功", { description: data.resume.name });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "上传失败，请重试");
@@ -202,7 +214,7 @@ export function ResumeWorkspace({ guest = false, onResumesChange }: Props) {
         {uploading ? <Spinner /> : <Plus />}{uploading ? uploadingLabel : "上传简历"}
       </Button>} />
 
-    {loading ? <LoadingState /> : loadError ? <div className="mt-8 rounded-xl border bg-card p-10 text-center" role="alert">
+    {loading && !knownEmpty ? <LoadingState /> : loadError ? <div className="mt-8 rounded-xl border bg-card p-10 text-center" role="alert">
       <p className="font-medium">暂时无法读取简历</p>
       <p className="mt-1.5 text-sm text-muted-foreground">{loadError}</p>
       <Button variant="outline" className="mt-5" onClick={() => { setLoading(true); setLoadError(""); load(); }}>重试</Button>
