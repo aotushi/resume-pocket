@@ -88,7 +88,8 @@ const faqs = [
 
 export default function Home() {
   return <AuthDialogProvider>
-    <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-card focus:px-4 focus:py-2 focus:shadow">跳到正文</a>
+    {/* 页面切换后路由会把焦点移到页面第一个元素；用 focus-visible，鼠标点击后不显示，只在键盘操作时出现 */}
+    <a href="#main" className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-3 focus-visible:left-3 focus-visible:z-50 focus-visible:rounded-md focus-visible:bg-card focus-visible:px-4 focus-visible:py-2 focus-visible:shadow">跳到正文</a>
     <SiteHeader />
 
     {/* landing：区块分隔线与交替底色见 globals.css */}
