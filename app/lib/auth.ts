@@ -1,35 +1,39 @@
 import { env } from "cloudflare:workers";
 import { betterAuth } from "better-auth/minimal";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { emailOTP } from "better-auth/plugins/email-otp";
+import { eq } from "drizzle-orm";
+import { cache } from "react";
 import { headers } from "next/headers";
 import { getDb } from "../../db";
 import * as schema from "../../db/schema";
+import { authOptions, hasAdminAccess } from "./auth-options";
 
 /** onSendError：验证码邮件发送失败时调用。better-auth 会吞掉发送异常并照常返回成功，由调用方据此改为报错 */
 export function getAuth(onSendError?: () => void) {
   if (!env.BETTER_AUTH_SECRET || !env.BETTER_AUTH_URL) {
     throw new Error("Authentication is not configured: BETTER_AUTH_SECRET and BETTER_AUTH_URL are required.");
   }
-  return betterAuth({
-    database: drizzleAdapter(getDb(), { provider: "sqlite", schema }),
+  const db = getDb();
+  return betterAuth(authOptions({
+    database: drizzleAdapter(db, { provider: "sqlite", schema }),
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
-    emailAndPassword: { enabled: true, minPasswordLength: 10, maxPasswordLength: 128 },
-    // 会话签名缓存在 Cookie 里 5 分钟，期间读会话不查数据库；代价是其他设备退出登录最多晚 5 分钟生效
-    session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
-    // The Worker applies a Cloudflare rate limit to the sign-in and sign-up routes.
-    rateLimit: { enabled: false },
-    // 验证码登录：新邮箱验证通过即自动注册；忘记密码也走验证码重置
-    plugins: [emailOTP({ otpLength: 6, expiresIn: 600, allowedAttempts: 5, storeOTP: "hashed", sendVerificationOTP: async (data) => {
+    // 验证邮箱前清除旧的未验证访问；OTP 登录由 Better Auth 自身执行同样的清理。
+    revokeUnverifiedAccess: async (userId) => {
+      await db.batch([
+        db.delete(schema.session).where(eq(schema.session.userId, userId)),
+        db.delete(schema.account).where(eq(schema.account.userId, userId)),
+      ]);
+    },
+    sendCode: async (data) => {
       try {
         await sendCodeEmail(data);
       } catch (error) {
         onSendError?.();
         throw error;
       }
-    } })],
-  });
+    },
+  }));
 }
 
 const CODE_PURPOSE: Record<string, string> = { "sign-in": "登录", "forget-password": "重置密码", "email-verification": "验证邮箱" };
@@ -55,14 +59,12 @@ async function sendCodeEmail({ email, otp, type }: { email: string; otp: string;
   });
 }
 
-export async function getCurrentUser() {
-  const session = await getAuth().api.getSession({ headers: await headers() });
-  return session?.user ?? null;
-}
+export const getCurrentUser = cache(async () => {
+  const session = await getAuth().api.getSession({ headers: await headers(), query: { disableCookieCache: true } });
+  return session?.user.emailVerified ? session.user : null;
+});
 
 // 管理员由环境变量 ADMIN_EMAILS（逗号分隔）指定，只在服务端判断，用户无法自行取得
-export function isAdmin(user: { email: string } | null) {
-  if (!user) return false;
-  const admins = (env.ADMIN_EMAILS ?? "").split(",").map((item) => item.trim().toLowerCase()).filter(Boolean);
-  return admins.includes(user.email.toLowerCase());
+export function isAdmin(user: { email: string; emailVerified: boolean } | null) {
+  return hasAdminAccess(user, env.ADMIN_EMAILS ?? "");
 }

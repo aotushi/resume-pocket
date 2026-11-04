@@ -71,6 +71,7 @@ type Step = "code" | "password" | "reset";
 const RESEND_SECONDS = 60;
 
 const OTP_ERRORS: Record<string, string> = {
+  EMAIL_NOT_VERIFIED: "请先改用邮箱验证码登录，验证后即可继续使用",
   INVALID_OTP: "验证码不正确，请检查后重试",
   OTP_EXPIRED: "验证码已过期，请重新获取",
   TOO_MANY_ATTEMPTS: "错误次数过多，请重新获取验证码",

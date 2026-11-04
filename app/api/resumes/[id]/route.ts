@@ -1,7 +1,7 @@
 import { guestRateLimited, resolveOwner } from "../../../lib/owner";
 import { deleteLinksForResume } from "../../../lib/shares";
 import { FORMAT_ERROR, GUEST_FORMAT_ERROR } from "../../../lib/format-copy";
-import { getBucket, isResumeId, isSameOrigin, readUpload, resumeFileResponse, resumeFromObject, saveResume, uploadName } from "../../../lib/resumes";
+import { deleteResumeFiles, getBucket, isResumeId, isSameOrigin, readUpload, resumeFileResponse, resumeFromObject, ResumeConflictError, saveResume, uploadName } from "../../../lib/resumes";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +55,7 @@ export async function PUT(request: Request, { params }: Context) {
     const object = await saveResume(owner.prefix, id, { ...named, ...upload }, resume);
     return Response.json({ resume: resumeFromObject(object, owner.kind) });
   } catch (error) {
+    if (error instanceof ResumeConflictError) return Response.json({ error: error.message }, { status: 409 });
     console.error("Could not replace resume", error);
     return Response.json({ error: "替换失败，请稍后重试" }, { status: 500 });
   }
@@ -67,8 +68,7 @@ export async function DELETE(request: Request, { params }: Context) {
   const { id } = await params;
   if (!isResumeId(id)) return Response.json({ error: "未找到这份简历" }, { status: 404 });
   try {
-    // 连同可能存在的 Word 原件一起删除
-    await getBucket().delete(["pdf", "docx", "doc"].map((ext) => `${owner.prefix}${id}.${ext}`));
+    await deleteResumeFiles(getBucket(), owner.prefix, id);
     // 再清理分享记录：即使这一步失败，公开访问也会因找不到简历而失效
     await deleteLinksForResume(owner.prefix, id).catch((error) => console.error("Could not delete share links", error));
     return new Response(null, { status: 204 });

@@ -2,12 +2,14 @@ import { env } from "cloudflare:workers";
 import { guestDeleteAt, isGuestExpired } from "./guest-policy";
 import type { Owner } from "./owner";
 import { hasMagic, isResumeId, readBoundedFile, safeFilename, SOURCE_MIME, type SourceType, sourceTypeOf } from "./resume-policy";
+import { originalObjectKey, saveResumeFiles, type ResumeUpload } from "./resume-storage";
+export { deleteResumeFiles, ResumeConflictError } from "./resume-storage";
 
 export { isResumeId, isSameOrigin, ownerPrefix, readBoundedFile, safeFilename, SOURCE_MIME, sourceTypeOf, type SourceType } from "./resume-policy";
 
 /**
  * 存储约定：每份简历都有 `{前缀}{id}.pdf`，用于预览、打印和列表；
- * Word 简历另存原件 `{前缀}{id}.docx|.doc`，下载默认给原件。列表只认 .pdf 对象。
+ * 新 Word 原件写到独立版本路径，由 PDF 的元数据引用；旧版固定路径仍兼容。
  */
 export type Resume = {
   id: string;
@@ -17,8 +19,10 @@ export type Resume = {
   uploadedAt: string;
   /** 首次上传时间：替换文件不改变它，游客保留期按它计算 */
   createdAt: string;
-  /** 文件版本（R2 对象 etag）：替换文件后改变，拼进文件地址以便浏览器长期缓存 */
+  /** 每次发布生成新版本，原件变化但 PDF 相同时也会更新 */
   version: string;
+  /** 用于条件写入，避免转换期间删除或更新的文件被覆盖 */
+  etag: string;
   /** 原件格式：pdf 直接预览；docx/doc 预览的是转换后的 PDF */
   source: SourceType;
   /** 仅游客简历有：到达该时间后自动删除 */
@@ -46,7 +50,7 @@ export function resumeFromObject(object: R2Object, kind: Owner["kind"] = "user")
     // A malformed metadata value must not make the entire list unusable.
   }
   const source = sourceTypeOf(`.${object.customMetadata?.source ?? "pdf"}`) ?? "pdf";
-  const resume: Resume = { id, name, size: object.size, uploadedAt: object.uploaded.toISOString(), createdAt: created.toISOString(), version: object.etag, source };
+  const resume: Resume = { id, name, size: object.size, uploadedAt: object.uploaded.toISOString(), createdAt: created.toISOString(), version: object.customMetadata?.version ?? object.etag, etag: object.etag, source };
   if (kind === "guest") resume.deleteAt = guestDeleteAt(created).toISOString();
   return resume;
 }
@@ -92,16 +96,26 @@ export async function resumeFileResponse(prefix: string, resume: Resume, request
   const params = new URL(request.url).searchParams;
   const download = params.get("download");
   const bucket = getBucket();
-  const wantOriginal = download !== null && download !== "pdf" && resume.source !== "pdf";
-  const ext = wantOriginal ? resume.source : "pdf";
-  const file = await bucket.get(`${prefix}${resume.id}.${ext}`, { onlyIf: request.headers });
+  // Read the PDF and its metadata together. An earlier head() can already be outdated.
+  const published = await bucket.get(`${prefix}${resume.id}.pdf`);
+  const current = published && resumeFromObject(published, prefix.startsWith("guests/") ? "guest" : "user");
+  if (!published || !current) return Response.json({ error: "未找到这份简历的文件" }, { status: 404 });
+  const wantOriginal = download !== null && download !== "pdf" && current.source !== "pdf";
+  const ext = wantOriginal ? current.source : "pdf";
+  const file = wantOriginal
+    ? await bucket.get(originalObjectKey(prefix, current.id, current.source, published.customMetadata))
+    : published;
+  if (wantOriginal) await published.body.cancel();
   if (!file) return Response.json({ error: "未找到这份简历的文件" }, { status: 404 });
-  const cacheControl = allowLongCache && params.get("v") === resume.version
+  const cacheControl = allowLongCache && params.get("v") === current.version
     ? "private, max-age=31536000, immutable"
     : "private, no-cache";
-  // If-None-Match 命中时 R2 不返回内容
-  if (!("body" in file)) return new Response(null, { status: 304, headers: { ETag: file.httpEtag, "Cache-Control": cacheControl } });
-  const name = resume.name.replace(/\.(pdf|docx|doc)$/i, "") + `.${ext}`;
+  const matches = request.headers.get("if-none-match")?.split(",").some((value) => value.trim().replace(/^W\//, "") === file.httpEtag || value.trim() === "*");
+  if (matches) {
+    await file.body.cancel();
+    return new Response(null, { status: 304, headers: { ETag: file.httpEtag, "Cache-Control": cacheControl } });
+  }
+  const name = current.name.replace(/\.(pdf|docx|doc)$/i, "") + `.${ext}`;
   const encodedName = encodeURIComponent(name).replace(/['()*]/g, (character) =>
     `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
   );
@@ -147,30 +161,7 @@ export async function readUpload(request: Request, type: SourceType): Promise<{ 
   }
 }
 
-/**
- * 写入一份简历：先存原件再存 PDF，列表只认 PDF，PDF 写入失败时不会出现缺原件的简历。
- * 替换已有简历时传入首次上传时间，并删掉格式不同的旧原件；PDF 写入失败则清理本次写入的原件。
- */
-export async function saveResume(prefix: string, id: string, upload: { name: string; type: SourceType; bytes: Uint8Array; pdf: Uint8Array }, replacing?: Resume) {
-  const bucket = getBucket();
-  const originalKey = `${prefix}${id}.${upload.type}`;
-  if (upload.type !== "pdf") await bucket.put(originalKey, upload.bytes, { httpMetadata: { contentType: SOURCE_MIME[upload.type] } });
-  try {
-    const object = await bucket.put(`${prefix}${id}.pdf`, upload.pdf, {
-      httpMetadata: { contentType: "application/pdf" },
-      customMetadata: {
-        name: encodeURIComponent(upload.name),
-        source: upload.type,
-        createdAt: replacing?.createdAt ?? new Date().toISOString(),
-      },
-    });
-    if (replacing && replacing.source !== "pdf" && replacing.source !== upload.type) {
-      await bucket.delete(`${prefix}${id}.${replacing.source}`).catch((error) => console.error("Could not delete old original", error));
-    }
-    return object;
-  } catch (error) {
-    // 替换同格式原件时旧原件已被覆盖，无法回滚；新原件留着也不影响预览（仍是旧 PDF）
-    if (upload.type !== "pdf" && replacing?.source !== upload.type) await bucket.delete(originalKey).catch(() => undefined);
-    throw error;
-  }
+/** Publish the PDF and the reference to its matching immutable Word original together. */
+export function saveResume(prefix: string, id: string, upload: ResumeUpload, replacing?: Resume) {
+  return saveResumeFiles(getBucket(), prefix, id, upload, replacing);
 }

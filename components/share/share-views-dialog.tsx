@@ -30,7 +30,6 @@ export function ShareViewsDialog({ linkId, target, views }: { linkId: string; ta
   useEffect(() => {
     if (!open) return;
     let active = true;
-    setError("");
     fetch(`/api/shares/${linkId}/views`, { cache: "no-store" })
       .then(async (response) => {
         const data = await response.json() as Detail & { error?: string };
@@ -44,7 +43,7 @@ export function ShareViewsDialog({ linkId, target, views }: { linkId: string; ta
   // 明细上线前累计的次数没有逐条记录，单独说明
   const earlier = detail ? Math.max(0, views - detail.recorded) : 0;
 
-  return <Dialog open={open} onOpenChange={setOpen}>
+  return <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (value) { setError(""); setDetail(null); } }}>
     <DialogTrigger asChild>
       <button type="button" className="inline-flex items-center gap-1 underline-offset-2 hover:text-foreground hover:underline"><Eye className="size-3" />{views} 次访问</button>
     </DialogTrigger>

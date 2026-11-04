@@ -25,10 +25,10 @@ function subscribe(listener: () => void) {
   listeners.add(listener);
   if (signedIn === null && !checking) {
     checking = true;
-    // 会话 Cookie 缓存 5 分钟，这个请求通常不查数据库
+    // 以服务器当前验证状态为准，旧的未验证会话不能触发已登录跳转。
     fetch("/api/auth/get-session", { cache: "no-store" })
-      .then((response) => response.ok ? response.json() as Promise<{ user?: unknown } | null> : null)
-      .then((data) => setSignedIn(Boolean(data?.user)))
+      .then((response) => response.ok ? response.json() as Promise<{ user?: { emailVerified?: boolean } } | null> : null)
+      .then((data) => setSignedIn(data?.user?.emailVerified === true))
       .catch(() => {})
       .finally(() => { checking = false; });
   }

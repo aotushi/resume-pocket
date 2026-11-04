@@ -15,18 +15,22 @@ const AUTH_PATHS = new Set([
   "/api/auth/email-otp/send-verification-otp",
   "/api/auth/sign-in/email-otp",
   "/api/auth/email-otp/reset-password",
+  "/api/auth/email-otp/request-password-reset",
+  "/api/auth/forget-password/email-otp",
+  "/api/auth/email-otp/verify-email",
+  "/api/auth/email-otp/check-verification-otp",
 ]);
 
 const tooMany = () => Response.json({ message: "请求过于频繁，请稍后再试。" }, { status: 429 });
 
 export default {
   async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext) {
-    const { pathname } = new URL(request.url);
+    const pathname = new URL(request.url).pathname.replace(/\/+$/, "");
     if (request.method === "POST" && AUTH_PATHS.has(pathname)) {
       const key = request.headers.get("cf-connecting-ip") ?? "local";
       if (!(await env.AUTH_LIMITER.limit({ key })).success) return tooMany();
       // 发验证码另按收件邮箱限流，换 IP 也不能对同一邮箱刷信
-      if (pathname === "/api/auth/email-otp/send-verification-otp") {
+      if (["/api/auth/email-otp/send-verification-otp", "/api/auth/email-otp/request-password-reset", "/api/auth/forget-password/email-otp"].includes(pathname)) {
         const body = await request.clone().json().catch(() => null) as { email?: unknown } | null;
         const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
         if (email && !(await env.OTP_LIMITER.limit({ key: email })).success) return tooMany();
