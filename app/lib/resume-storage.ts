@@ -8,6 +8,26 @@ export class ResumeConflictError extends Error {
 
 /** The PDF and its metadata are one atomic publication point. Never overwrite a published original. */
 export async function saveResumeFiles(bucket: R2Bucket, prefix: string, id: string, upload: ResumeUpload, replacing?: { etag: string; createdAt: string }) {
+  await rejectClosedUpload(bucket, prefix, id);
+  let object: R2Object;
+  try {
+    object = await publishResumeFiles(bucket, prefix, id, upload, replacing);
+  } catch (error) {
+    await rejectClosedUpload(bucket, prefix, id);
+    throw error;
+  }
+  await rejectClosedUpload(bucket, prefix, id);
+  return object;
+}
+
+async function rejectClosedUpload(bucket: R2Bucket, prefix: string, id: string) {
+  if (prefix.startsWith("resumes/") && await bucket.head(`${prefix}.deleted`)) {
+    await deleteResumeFiles(bucket, prefix, id);
+    throw new Error("账户正在注销，无法保存简历");
+  }
+}
+
+async function publishResumeFiles(bucket: R2Bucket, prefix: string, id: string, upload: ResumeUpload, replacing?: { etag: string; createdAt: string }) {
   const version = crypto.randomUUID();
   if (upload.type !== "pdf") {
     await bucket.put(`${prefix}${id}/${version}.${upload.type}`, upload.bytes, {

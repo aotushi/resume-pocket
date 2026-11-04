@@ -8,6 +8,7 @@ type Options = {
   baseURL: string;
   sendCode: (data: { email: string; otp: string; type: string }) => Promise<void>;
   revokeUnverifiedAccess: (userId: string) => Promise<void>;
+  deleteUserData?: (user: { id: string; email: string }) => Promise<void>;
 };
 
 // Recovery must work even when a browser still carries an old, unverified session.
@@ -32,7 +33,8 @@ export function authOptions(options: Options) {
       maxPasswordLength: 128,
     },
     // Revoked legacy sessions must stop working immediately, including on auth APIs.
-    session: { cookieCache: { enabled: false } },
+    session: { cookieCache: { enabled: false }, freshAge: 5 * 60 },
+    user: { deleteUser: { enabled: Boolean(options.deleteUserData), beforeDelete: options.deleteUserData } },
     rateLimit: { enabled: false },
     emailVerification: {
       beforeEmailVerification: async (user) => {

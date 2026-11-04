@@ -36,6 +36,7 @@ const ownerKindOf = (prefix: string): Owner["kind"] => prefix.startsWith("guests
 
 /** 读取所有者名下的一份简历；游客简历过了保留期视为不存在 */
 export async function findResume(prefix: string, resumeId: string): Promise<Resume | null> {
+  if (prefix.startsWith("resumes/") && await getBucket().head(`${prefix}.deleted`)) return null;
   const object = await getBucket().head(`${prefix}${resumeId}.pdf`);
   return object ? resumeFromObject(object, ownerKindOf(prefix)) : null;
 }

@@ -70,7 +70,7 @@ export async function DELETE(request: Request, { params }: Context) {
   try {
     await deleteResumeFiles(getBucket(), owner.prefix, id);
     // 再清理分享记录：即使这一步失败，公开访问也会因找不到简历而失效
-    await deleteLinksForResume(owner.prefix, id).catch((error) => console.error("Could not delete share links", error));
+    await deleteLinksForResume(owner.prefix, id);
     return new Response(null, { status: 204 });
   } catch (error) {
     console.error("Could not delete resume", error);

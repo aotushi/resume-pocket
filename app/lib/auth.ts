@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { getDb } from "../../db";
 import * as schema from "../../db/schema";
 import { authOptions, hasAdminAccess } from "./auth-options";
+import { deleteUserData } from "./data-cleanup";
 
 /** onSendError：验证码邮件发送失败时调用。better-auth 会吞掉发送异常并照常返回成功，由调用方据此改为报错 */
 export function getAuth(onSendError?: () => void) {
@@ -18,6 +19,7 @@ export function getAuth(onSendError?: () => void) {
     database: drizzleAdapter(db, { provider: "sqlite", schema }),
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
+    deleteUserData: (user) => deleteUserData(env.DB, env.BUCKET, user),
     // 验证邮箱前清除旧的未验证访问；OTP 登录由 Better Auth 自身执行同样的清理。
     revokeUnverifiedAccess: async (userId) => {
       await db.batch([

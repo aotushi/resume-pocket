@@ -8,7 +8,7 @@ const baseURL = "http://localhost:5173";
 const password = "Synthetic-original-password-123";
 const cookieOf = (response) => response.headers.getSetCookie().map((value) => value.split(";")[0]).join("; ");
 
-function fixture() {
+function fixture(deleteUserData) {
   const data = { user: [], session: [], account: [], verification: [] };
   const codes = new Map();
   const database = memoryAdapter(data);
@@ -16,6 +16,7 @@ function fixture() {
   // Reproduce credentials/cached sessions issued by the version being replaced.
   const legacy = betterAuth({ ...common, emailAndPassword: { enabled: true }, session: { cookieCache: { enabled: true } } });
   const auth = betterAuth(authOptions({ ...common,
+    deleteUserData,
     sendCode: async ({ email, otp, type }) => { codes.set(`${email}:${type}`, otp); },
     revokeUnverifiedAccess: async (userId) => {
       for (const table of [data.session, data.account]) {
@@ -127,4 +128,43 @@ test("an existing verified password account continues to work", async () => {
   data.user[0].emailVerified = true;
   assert.equal((await call("/sign-in/email", { email, password })).status, 200);
   assert.equal((await (await call("/get-session", null, cookie)).json()).user.emailVerified, true);
+});
+
+test("account deletion rejects anonymous, unverified, and stale sessions; fresh verification deletes only the owner", async () => {
+  const cleaned = [];
+  const { call, seed, otp, data } = fixture(async (user) => { cleaned.push(user.id); });
+  const email = "delete@example.invalid";
+  assert.equal((await call("/delete-user", {})).ok, false);
+  const legacyCookie = await seed(email);
+  assert.equal((await call("/delete-user", {}, legacyCookie)).status, 403);
+  const other = "keep@example.invalid";
+  const otherResponse = await call("/sign-in/email-otp", { email: other, otp: await otp(other) });
+  const ownerResponse = await call("/sign-in/email-otp", { email, otp: await otp(email) });
+  const owner = data.user.find((user) => user.email === email);
+  const staleCookie = cookieOf(ownerResponse);
+  data.session.find((session) => session.userId === owner.id).createdAt = new Date(Date.now() - 6 * 60_000);
+  assert.equal((await call("/delete-user", {}, staleCookie)).ok, false);
+  assert.deepEqual(cleaned, []);
+  const fresh = await call("/sign-in/email-otp", { email, otp: await otp(email) });
+  assert.equal((await call("/delete-user", {}, cookieOf(fresh))).status, 200);
+  assert.deepEqual(cleaned, [owner.id]);
+  assert.equal(data.user.some((user) => user.id === owner.id), false);
+  assert.equal(data.session.some((session) => session.userId === owner.id), false);
+  assert.equal(await (await call("/get-session", null, staleCookie)).json(), null);
+  assert.equal(await (await call("/get-session", null, cookieOf(fresh))).json(), null);
+  assert.equal((await (await call("/get-session", null, cookieOf(otherResponse))).json()).user.email, other);
+});
+
+test("failed account cleanup leaves an authenticated owner able to retry", async () => {
+  let fail = true;
+  const { call, otp, data } = fixture(async () => { if (fail) throw new Error("injected cleanup failure"); });
+  const email = "retry@example.invalid";
+  const response = await call("/sign-in/email-otp", { email, otp: await otp(email) });
+  const cookie = cookieOf(response);
+  assert.equal((await call("/delete-user", {}, cookie)).status, 500);
+  assert.equal(data.user.length, 1);
+  assert.equal((await (await call("/get-session", null, cookie)).json()).user.email, email);
+  fail = false;
+  assert.equal((await call("/delete-user", {}, cookie)).status, 200);
+  assert.equal(data.user.length, 0);
 });

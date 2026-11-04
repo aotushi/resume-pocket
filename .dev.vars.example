@@ -1,4 +1,9 @@
 BETTER_AUTH_SECRET=replace-with-a-random-secret-of-at-least-32-characters
 BETTER_AUTH_URL=http://127.0.0.1:5173
+SHARE_TOKEN_KEY=replace-with-base64-encoded-32-random-bytes
+# 留空时验证码仅打印到本地终端
+EMAIL_FROM=
+# 本地 Word 转换容器启动后取消下一行注释
+# WORD_CONVERTER_URL=http://127.0.0.1:18080
 # 管理员邮箱，逗号分隔；未设置则没有管理员
 ADMIN_EMAILS=

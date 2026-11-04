@@ -5,6 +5,7 @@
   "compatibility_date": "2026-10-29",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  "triggers": { "crons": ["17 * * * *"] },
   "secrets": { "required": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "ADMIN_EMAILS", "SHARE_TOKEN_KEY"] },
   "d1_databases": [
     {

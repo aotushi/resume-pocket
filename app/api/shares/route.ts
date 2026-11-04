@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { shareLink } from "../../../db/schema";
 import { guestRateLimited, resolveOwner } from "../../lib/owner";
@@ -65,6 +66,11 @@ export async function POST(request: Request) {
       views: 0,
       createdAt: now,
     }).returning();
+    // Account/file deletion may have started while the insert was in flight.
+    if (!await findResume(owner.prefix, resumeId)) {
+      await getDb().delete(shareLink).where(eq(shareLink.id, row.id));
+      return Response.json({ error: "简历已删除或到期，请刷新后重试" }, { status: 409 });
+    }
     return Response.json({ link: await toView(row, new URL(request.url).origin, now) }, { status: 201, headers: noStore });
   } catch (error) {
     console.error("Could not create share link", error);

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { FileText, LogOut, Settings, ShieldCheck } from "lucide-react";
+import { BarChart3, FileText, LogOut, Settings, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Brand } from "@/components/site/brand";
 import { setSignedIn } from "@/components/site/signed-in";
@@ -17,7 +17,7 @@ export async function signOut() {
     const response = await fetch("/api/auth/sign-out", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     if (!response.ok) throw new Error();
     setSignedIn(false);
-    window.location.href = "/";
+    window.location.replace(new URL("/", window.location.origin).href);
   } catch {
     toast.error("退出失败，请重试");
   }
@@ -27,22 +27,23 @@ export function AppHeader({ user, admin }: Props) {
   const pathname = usePathname();
   const links = [
     { href: "/app", label: "我的简历", icon: FileText, active: pathname === "/app" },
+    { href: "/app/stats", label: "数据统计", icon: BarChart3, active: pathname === "/app/stats" },
     ...(admin ? [{ href: "/app/admin", label: "管理后台", icon: ShieldCheck, active: pathname.startsWith("/app/admin") }] : []),
   ];
 
   return <header className="sticky top-0 z-40 border-b bg-card print:hidden">
-    <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+    <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-6 sm:px-6 lg:px-8">
       <Brand />
       <nav aria-label="工作区导航" className="flex items-center gap-1">
-        {links.map((link) => <Link key={link.href} href={link.href} aria-current={link.active ? "page" : undefined}
-          className={cn("flex h-10 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors", link.active ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
+        {links.map((link) => <Link key={link.href} href={link.href} aria-label={link.label} title={link.label} aria-current={link.active ? "page" : undefined}
+          className={cn("flex h-11 min-w-11 items-center justify-center gap-2 rounded-md px-2 text-sm font-medium transition-colors sm:px-3", link.active ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground")}>
           <link.icon className="size-4" /><span className="hidden sm:inline">{link.label}</span>
         </Link>)}
       </nav>
 
       <DropdownMenu>
-        <DropdownMenuTrigger className="ml-auto flex items-center gap-2.5 rounded-full p-1 pr-1 outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring sm:pr-3" aria-label="账户菜单">
-          <Avatar className="size-8"><AvatarFallback className="bg-secondary text-sm font-medium text-secondary-foreground">{user.name.slice(0, 1).toUpperCase()}</AvatarFallback></Avatar>
+        <DropdownMenuTrigger className="ml-auto flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2.5 rounded-full p-1 pr-1 outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring sm:pr-3" aria-label="账户菜单">
+          <Avatar className="size-8"><AvatarFallback className="bg-secondary text-sm font-medium text-secondary-foreground">{(user.name.trim() || user.email).slice(0, 1).toUpperCase()}</AvatarFallback></Avatar>
           <span className="hidden max-w-[160px] truncate text-sm font-medium sm:block">{user.name}</span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-60">

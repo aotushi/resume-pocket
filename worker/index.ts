@@ -1,5 +1,6 @@
 import { Container } from "@cloudflare/containers";
 import handler from "vinext/server/fetch-handler";
+import { cleanupExpiredGuests } from "../app/lib/data-cleanup";
 
 /** Word → PDF 转换容器（converter/），只接受 Worker 内部调用，且不允许访问外网 */
 export class WordConverter extends Container {
@@ -19,11 +20,16 @@ const AUTH_PATHS = new Set([
   "/api/auth/forget-password/email-otp",
   "/api/auth/email-otp/verify-email",
   "/api/auth/email-otp/check-verification-otp",
+  "/api/auth/delete-user",
 ]);
 
 const tooMany = () => Response.json({ message: "请求过于频繁，请稍后再试。" }, { status: 429 });
 
-export default {
+const worker = {
+  async scheduled(_controller: ScheduledController, env: Cloudflare.Env) {
+    const cleaned = await cleanupExpiredGuests(env.DB, env.BUCKET);
+    console.log(JSON.stringify({ event: "guest-retention-cleanup", ...cleaned }));
+  },
   async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext) {
     const pathname = new URL(request.url).pathname.replace(/\/+$/, "");
     if (request.method === "POST" && AUTH_PATHS.has(pathname)) {
@@ -39,3 +45,5 @@ export default {
     return handler.fetch(request, env, ctx);
   },
 };
+
+export default worker;

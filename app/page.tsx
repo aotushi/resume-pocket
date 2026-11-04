@@ -17,8 +17,8 @@ export const dynamic = "force-static";
 
 // 首页统一的版式尺度（8pt 网格，内距 < 外距）：区块已有分隔线与交替底色，留白不必再加大
 const container = "mx-auto max-w-6xl px-5 sm:px-8";
-const sectionY = "py-12 sm:py-16";
-const contentTop = "mt-8 sm:mt-10";
+const sectionY = "py-8 sm:py-16";
+const contentTop = "mt-6 sm:mt-10";
 const card = "landing-surface rounded-xl border p-5";
 const cardGrid = "grid gap-4";
 
@@ -31,7 +31,7 @@ const steps = [
 const features = [
   { icon: Eye, title: "打开就能看", text: "PDF 原样显示，Word 自动转成可在线看的版本；电脑、手机都看得清，也能直接打印或下载。" },
   { icon: CalendarClock, title: "一家公司一条链接", text: "每条链接可以单独写一句留言、决定是否显示联系方式，彼此互不影响。" },
-  { icon: Power, title: "发出去也能收回", text: "到期自动失效，也能随时手动关掉、再打开；换了新版简历，发出去的链接自动显示新版。" },
+  { icon: Power, title: "随时停止在线分享", text: "到期自动失效，也能随时手动关掉、再打开；换了新版简历，发出去的链接自动显示新版。" },
 ];
 
 const scenarios = [
@@ -48,7 +48,7 @@ const compareColumns = ["简历口袋", "纸质简历", "邮件附件", "网盘�
 const comparison: { label: string; values: [Mark, Mark, Mark, Mark] }[] = [
   { label: "随时送达，无需打印或递送", values: ["yes", "no", "yes", "yes"] },
   { label: "改一个字不用重新打印、重新发送", values: ["yes", "no", "no", "partial"] },
-  { label: "发出后可以收回", values: ["yes", "no", "no", "partial"] },
+  { label: "发出后可以停止在线访问", values: ["yes", "no", "no", "partial"] },
   { label: "按对象设置有效期", values: ["yes", "no", "no", "partial"] },
   { label: "对方无需注册或下载 App", values: ["yes", "yes", "yes", "partial"] },
   { label: "手机上直接阅读多页简历", values: ["yes", "no", "partial", "partial"] },
@@ -76,8 +76,8 @@ const roadmap = [
 const faqs = [
   { q: "支持什么文件？", a: `支持 ${USER_FORMATS_DETAIL}，单个文件不超过 ${MAX_SIZE_TEXT}。PDF 按原排版呈现；Word 会转换后在线预览，字体或分页可能与原文件略有差异，分享前请先检查预览，下载时提供原文件。后续还会支持更多文档与图片格式。` },
   { q: "对方需要注册账号吗？", a: "不需要。持有有效链接的人可以直接在浏览器中查看简历，默认可以打印和下载。" },
-  { q: "链接会失效吗？", a: "创建时可选择 1 天（默认）、2 天、7 天、自定义日期或永久有效。到期后链接无法再打开；你也可以随时手动停用，之后可以重新启用。停用或到期后，新打开的人只会看到失效提示；已经打开着页面的人，也会在到期那一刻、30 秒内或切回页面时看到简历被移除。重新启用后，同一条链接恢复可用。" },
-  { q: "链接被转发了怎么办？", a: "链接在有效期内，任何拿到它的人都可能打开。如果不希望继续被查看，可以立即停用这条链接，已打开的页面也会随之移除简历。但已经下载、打印或截图的副本无法收回，请只把链接发给可信的人。" },
+  { q: "链接会失效吗？", a: "创建时可选择 1 天（默认）、2 天、7 天、自定义日期或永久有效。到期或手动停用后，新打开的人只会看到失效提示；已打开的页面在前台且联网时，每 30 秒检查一次，切回页面或恢复网络时也会检查。收到失效状态后会移除简历；手动停用时，提示 5 秒后返回首页。网络中断或浏览器暂停时无法保证即时移除。重新启用未到期的链接后，同一地址恢复可用。" },
+  { q: "链接被转发了怎么办？", a: "链接在有效期内，任何拿到它的人都可能打开。如果不希望继续被查看，可以立即停用这条链接；已打开的页面再次联网检查到失效后也会移除简历。已经下载、打印或截图的副本无法收回，请只把链接发给可信的人。" },
   { q: "更新简历后，之前发出的链接会变吗？", a: "为同一份简历上传新版后，它的有效链接会自动展示最新版本，有效期与状态保持不变。新上传另一份简历不会影响旧链接。" },
   { q: "必须公开手机号和邮箱吗？", a: "不必。分享页上的公开信息卡和投递留言都是可选的，不填写时招聘方只看到简历本身。私人备注（例如「投给 A 公司产品岗」）只有你自己能看到。" },
   { q: "删除简历后会怎样？", a: "删除后，这份简历的所有分享链接会一起失效，对方无法再查看或下载。" },
@@ -110,7 +110,7 @@ export default function Home() {
                 signedIn={<Button asChild variant="outline" size="lg" className="h-12 bg-card px-7 text-[15px]"><Link href="/s/demo">查看示例分享页</Link></Button>}
                 signedOut={<Button asChild variant="outline" size="lg" className="h-12 bg-card px-7 text-[15px]"><Link href="/try">无需注册，直接上传</Link></Button>} />
             </div>
-            <SignedInSwitch signedOut={<p className="mt-4 text-sm text-muted-foreground">先看看效果？<Link href="/s/demo" className="font-medium text-primary hover:underline">打开示例分享页</Link></p>} />
+            <SignedInSwitch signedOut={<div className="mt-4 space-y-2 text-sm text-muted-foreground"><p>免注册支持 1 份 PDF，保存 14 天；Word 请先免费注册。</p><p>先看看效果？<Link href="/s/demo" className="font-medium text-primary hover:underline">打开示例分享页</Link></p></div>} />
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-1.5"><UserX className="size-4 text-primary" />对方无需注册</li>
               <li className="flex items-center gap-1.5"><Power className="size-4 text-primary" />链接可随时停用</li>
@@ -161,7 +161,7 @@ export default function Home() {
               <CardText icon={ShieldCheck} title="谁能看到，说清楚" text="我们不说「绝对安全」，只把每条链接谁能看到讲明白，并让你随时收回。" />
             </div>
             <ul className="grid gap-3 text-[15px] sm:grid-cols-2">
-              {["简历保存在你的个人空间，登录后只有你能管理", "持有有效链接的人可以打开，默认可打印和下载", "链接被转发后，持有者在有效期内仍可能查看", "到期或停用后，新打开链接只会看到失效提示；已经打开着的页面也会在 30 秒内（或对方切回页面时）自动移除简历", "对方已下载、打印或截图的副本无法收回"].map((item) => <li key={item} className="flex gap-2.5 rounded-lg bg-muted/60 px-4 py-3 leading-relaxed"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />{item}</li>)}
+              {["简历保存在你的个人空间，登录后只有你能管理", "持有有效链接的人可以打开，默认可打印和下载", "链接被转发后，持有者在有效期内仍可能查看", "到期或停用后，新访问立即受限；已打开的页面在前台且联网时每 30 秒检查一次，检测到失效后移除简历", "对方已下载、打印或截图的副本无法收回"].map((item) => <li key={item} className="flex gap-2.5 rounded-lg bg-muted/60 px-4 py-3 leading-relaxed"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />{item}</li>)}
             </ul>
           </div>
         </div>
@@ -171,19 +171,23 @@ export default function Home() {
       <section id="scenarios" className={sectionY}>
         <div className={container}>
           <SectionHeading eyebrow="适用场景" title="求职路上，这些时候用得上" text="我们不替你投递，只让发出去的每份简历都管得住" />
-          <div className={cn(contentTop, cardGrid, "sm:grid-cols-2 lg:grid-cols-4")}>
+          <details className={contentTop}>
+            <summary className="mx-auto w-fit cursor-pointer rounded-lg px-4 py-3 text-sm font-medium text-primary focus-visible:outline-2 focus-visible:outline-ring">查看四种使用场景</summary>
+          <div className={cn("mt-4", cardGrid, "sm:grid-cols-2 lg:grid-cols-4")}>
             {scenarios.map((item) => <div key={item.title} className={card}>
               <CardText icon={item.icon} title={item.title} text={item.text} />
             </div>)}
           </div>
+          </details>
         </div>
       </section>
 
       {/* 与常见方式对比 */}
       <section id="compare" className={sectionY}>
         <div className={container}>
-          <SectionHeading eyebrow="为什么放在线上" title="和纸质简历、邮件附件、网盘链接比" text="纸质简历要打印、递送，改一个字就得重印；附件一旦发出就收不回；网盘链接常常要求对方登录或下载 App" />
-          <div className={cn(contentTop, "mx-auto max-w-4xl")}>
+          <SectionHeading eyebrow="为什么放在线上" title="按投递场景，选择适合的方式" text="保留需要的纸质版，用在线链接管理后续更新、有效期和投递留言。" />
+          <details className={cn(contentTop, "mx-auto max-w-4xl")}>
+            <summary className="mx-auto mb-4 w-fit cursor-pointer rounded-lg px-4 py-3 text-sm font-medium text-primary focus-visible:outline-2 focus-visible:outline-ring">展开纸质、邮件和网盘方式对比</summary>
             {/* relative：让单元格里 sr-only 的绝对定位文字留在表格容器内，否则会撑宽手机页面 */}
             <div className="landing-surface relative overflow-hidden rounded-xl border">
               <table className="w-full table-fixed text-left text-sm sm:text-[15px]">
@@ -209,7 +213,7 @@ export default function Home() {
               <Printer className="mt-0.5 size-5 shrink-0 text-primary" />
               <p className="text-[15px] leading-relaxed text-muted-foreground"><span className="font-medium text-foreground">面试现场仍要纸质版？</span>不冲突。你可以在自己的空间里随时打印最新版本，招聘方也能在分享页直接打印，不必提前准备一沓、改了又重印。</p>
             </div>
-          </div>
+          </details>
         </div>
       </section>
 

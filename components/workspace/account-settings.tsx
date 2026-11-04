@@ -1,6 +1,6 @@
 "use client";
 
-/** 账户设置：昵称、修改密码对接 better-auth 现有接口；删除账户尚未开放 */
+/** 账户设置：资料、密码与经邮箱确认的账户注销 */
 import { useState } from "react";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { signOut } from "./app-header";
 import { PageHeader } from "./page-header";
+import { DeleteAccount } from "./delete-account";
 
 type Props = { user: { name: string; email: string; createdAt: string } };
 
@@ -32,9 +33,9 @@ export function AccountSettings({ user }: Props) {
       <Card className="border-destructive/30">
         <CardHeader>
           <CardTitle className="text-destructive">删除账户</CardTitle>
-          <CardDescription>删除账户会同时删除你的全部简历及分享链接，且无法恢复。在线删除功能暂未开放，如需删除请通过问题反馈联系我们。</CardDescription>
+          <CardDescription>验证邮箱后，可删除账户、全部简历及分享记录。此操作无法恢复，请先下载需要保留的文件。</CardDescription>
         </CardHeader>
-        <CardFooter className="border-t"><Button variant="destructive" disabled>删除账户（暂未开放）</Button></CardFooter>
+        <CardFooter className="border-t"><DeleteAccount email={user.email} /></CardFooter>
       </Card>
     </div>
   </div>;

@@ -87,4 +87,18 @@ test("R2 publication keeps PDF and original consistent across failures, races, a
     await deleteResumeFiles(bucket, prefix, id);
     assert.equal((await bucket.list({ prefix: `${prefix}${id}` })).objects.length, 0);
   });
+
+  await t.test("account deletion prevents new uploads and removes a publication already in flight", async () => {
+    const closedPrefix = "resumes/closed-owner/";
+    const id = crypto.randomUUID();
+    const concurrent = interceptPut(bucket, async (key, ...args) => {
+      // Simulate the delete callback finishing between an upload's permission check and commit.
+      if (key.endsWith(".pdf")) await bucket.put(`${closedPrefix}.deleted`, "");
+      return bucket.put(key, ...args);
+    });
+    await assert.rejects(saveResumeFiles(concurrent, closedPrefix, id, upload("docx", "late")), /账户正在注销/);
+    assert.equal((await bucket.list({ prefix: `${closedPrefix}${id}` })).objects.length, 0);
+    await assert.rejects(saveResumeFiles(bucket, closedPrefix, id, upload("pdf", "new")), /账户正在注销/);
+    assert.deepEqual((await bucket.list({ prefix: closedPrefix })).objects.map((object) => object.key), [`${closedPrefix}.deleted`]);
+  });
 });
